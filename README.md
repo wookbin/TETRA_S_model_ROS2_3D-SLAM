@@ -1,2 +1,2 @@
 # TETRA_S_model_ROS2_3D-SLAM
-TETRA_S_Model_ROS2_jazzy_3D SLAM &amp; NVA2
+TETRA_S_Model_ROS2_jazzy_3D SLAM &amp; NAV2
