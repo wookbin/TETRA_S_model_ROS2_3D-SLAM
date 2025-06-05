@@ -7,8 +7,8 @@ ros2-jazzy version package
    SICK Tim571(2D LiDAR), Cygbot D1(소형 2D/3D LiDAR), Realsense D455(3D Depth Camera), IAHRS(IMU), Livox_MID-360(3D LiDAR)
 
 - SICK Tim571: https://github.com/SICKAG/sick_scan_xd
-- Cygbot D1: https://github.com/CygLiDAR-ROS/cyglidar_d1
-- Realsense D455: https://github.com/IntelRealSense/realsense-ros
+- Cygbot D2: https://github.com/CygLiDAR-ROS/cyglidar_d2
+- Realsense D435: https://github.com/IntelRealSense/realsense-ros
 - IAHRS : https://github.com/wookbin/iahrs_driver_ros2
 - Livox MID-360: https://github.com/Livox-SDK/livox_ros_driver2
 
