@@ -13,7 +13,11 @@ ros2-jazzy version package
 - Livox MID-360: https://github.com/Livox-SDK/livox_ros_driver2
 
 
-  
+사용하는 패키지:
+- apriltag_ros: https://github.com/AprilRobotics/apriltag_ros
+- rtabmap(3D SLAM): https://github.com/introlab/rtabmap_ros
+- usb_cam: https://github.com/ros-drivers/usb_cam
+- nav2(Navigation): https://github.com/ros-navigation/navigation2 
   
 
 
