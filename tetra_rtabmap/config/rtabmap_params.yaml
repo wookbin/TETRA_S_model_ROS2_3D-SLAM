@@ -1,0 +1,17 @@
+rtabmap:
+  ros__parameters:
+    subscribe_scan_cloud: true
+    scan_cloud_topic: "/livox/lidar"
+    frame_id: "base_footprint"
+    odom_topic: "/odom"
+    use_odom: true
+    approx_sync: true
+    queue_size: 10
+    Grid/3D: true
+    Grid/RangeMax: 20.0
+    Grid/RangeMin: 0.5
+    Grid/FromScan: true
+    Reg/Strategy: 1   # ICP only
+    RGBD/ProximityPathMaxNeighbors: 0
+    RGBD/ProximityBySpace: false
+    Mem/NotLinkedNodesKept: false
