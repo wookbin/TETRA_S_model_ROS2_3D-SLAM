@@ -98,7 +98,8 @@ def launch_setup(context, *args, **kwargs):
             'database_path': db_path,
 
         }],
-        arguments=rtabmap_arguments,
+        #arguments=rtabmap_arguments,
+        arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
             ('scan_cloud', lidar_topic),
             ('odom', 'odom'),
