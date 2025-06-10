@@ -126,7 +126,8 @@ def launch_setup(context, *args, **kwargs):
             'Grid/CellSize': '0.05',
             'database_path': db_path,
         }],
-        arguments=rtabmap_arguments,
+        #arguments=rtabmap_arguments,
+        arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
             ('scan_cloud', lidar_topic),
             ('odom', 'odom'),
@@ -149,9 +150,9 @@ def launch_setup(context, *args, **kwargs):
     ]
 
     if mapping == 'false':
-        # Call PublishMap after 3 seconds...
+        # Call PublishMap after 2 seconds...
         publish_map_timer = TimerAction(
-            period=3.0,
+            period= 2.0,
             actions=[OpaqueFunction(function=call_publish_map_service)]
         )
         actions.append(publish_map_timer)
@@ -183,4 +184,3 @@ def generate_launch_description():
         DeclareLaunchArgument('db_name', default_value='rtabmap', description='Name of the .db file without extension'),
         OpaqueFunction(function=launch_setup),
     ])
-
