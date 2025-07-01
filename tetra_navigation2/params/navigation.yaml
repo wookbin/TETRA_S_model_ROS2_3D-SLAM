@@ -10,9 +10,12 @@ bt_navigator:
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+      bt_xml_filename: "/home/tetra/ros2_ws/src/tetra_navigation2/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
-    
+      bt_xml_filename: "/home/tetra/ros2_ws/src/tetra_navigation2/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"
+
     use_feedback: true
     
     error_code_names:
