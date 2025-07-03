@@ -52,6 +52,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
   "srv/DeleteMap.srv"
   "srv/RunMapping.srv"
+  "srv/Run3DMapping.srv"
   "srv/RunNavigation.srv"
   "srv/GetInformation.srv"
   "srv/GotoLocation.srv"
