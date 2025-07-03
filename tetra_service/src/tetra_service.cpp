@@ -391,7 +391,7 @@ public:
 		//add...rtabamp
 		run_3d_mapping_cmd_srv = create_service<interfaces::srv::Run3DMapping>(
         	"run_3d_mapping_cmd", 
-		std::bind(&TETRA_SERVICE::3D_Mapping_Mode_Command, this, std::placeholders::_1, std::placeholders::_2));
+		std::bind(&TETRA_SERVICE::Mapping_3D_Mode_Command, this, std::placeholders::_1, std::placeholders::_2));
 
 		run_navigation_cmd_srv = create_service<interfaces::srv::RunNavigation>(
         	"run_navigation_cmd", 
@@ -1742,7 +1742,7 @@ public:
 
 	}
 
-	bool 3D_Mapping_Mode_Command(
+	bool Mapping_3D_Mode_Command(
 		const std::shared_ptr<interfaces::srv::Run3DMapping::Request> request, 
 		const std::shared_ptr<interfaces::srv::Run3DMapping::Response> response)
 	{
