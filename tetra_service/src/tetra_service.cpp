@@ -75,6 +75,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <atomic>
+#include <filesystem>
 
 using namespace std;
 using std::placeholders::_1;
@@ -1690,35 +1691,69 @@ public:
 		const std::shared_ptr<interfaces::srv::DeleteMap::Request>  request, 
 		const std::shared_ptr<interfaces::srv::DeleteMap::Response> response)
 	{
-		bool bResult = false;
+		namespace fs = std::filesystem; //add..
 
+		bool bResult = false;
+		//2D SLAM Mode/////////////////////////////////////////////////////////////////////////////////////////
+		bool m_2D_filepath = false;
+		int iResult1 = 0;
+		int iResult2 = 0;
 		string m_strMapName_yaml;
 		string m_strMapName_pgm;
 		m_strMapName_yaml = "/home/tetra/ros2_ws/src/tetra_navigation2/maps/" + request->map_name + ".yaml";  
 		m_strMapName_pgm  = "/home/tetra/ros2_ws/src/tetra_navigation2/maps/" + request->map_name + ".pgm";
+		//3D SLAM Mode/////////////////////////////////////////////////////////////////////////////////////////
+		bool m_3D_filepath = false;
+		int iResult3 = 0;
+		string m_strMapName_db;
+		m_strMapName_db = "/home/tetra/.ros/" + request->map_name + ".db";  
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		//yaml file erase
-		int iResult1 = remove(m_strMapName_yaml.c_str());
-		if(iResult1 == 0)
+		m_2D_filepath = fs::exists(m_strMapName_yaml.c_str());
+		if(m_2D_filepath)
 		{
-			response->command_result = true;
-		}
-		else
-		{
-			response->command_result = false;
-		}
-		//pgm file erase
-		int iResult2 = remove(m_strMapName_pgm.c_str());
-		if(iResult2 == 0)
-		{
-			response->command_result = true;
-		}
-		else
-		{
-			response->command_result = false;
+			//yaml file erase
+			iResult1 = remove(m_strMapName_yaml.c_str());
+			if(iResult1 == 0)
+			{
+				response->command_result = true;
+			}
+			else
+			{
+				response->command_result = false;
+			}
+			//pgm file erase
+			iResult2 = remove(m_strMapName_pgm.c_str());
+			if(iResult2 == 0)
+			{
+				response->command_result = true;
+			}
+			else
+			{
+				response->command_result = false;
+			}
+
+			printf("Delete 2D Map Name: %s \n", request->map_name.c_str());
+
 		}
 
-		printf("Delete Map Name: %s \n", request->map_name.c_str());
+		m_3D_filepath = fs::exists(m_strMapName_db.c_str());
+		if(m_3D_filepath)
+		{
+			//DB file erase
+			iResult3 = remove(m_strMapName_db.c_str());
+			if(iResult3 == 0)
+			{
+				response->command_result = true;
+			}
+			else
+			{
+				response->command_result = false;
+			}
+
+			printf("Delete 3D Map Name: %s \n", request->map_name.c_str());
+		}
+
 		return true;
 
 	}
