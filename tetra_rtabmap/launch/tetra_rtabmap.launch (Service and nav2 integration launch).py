@@ -75,7 +75,6 @@ def launch_setup(context, *args, **kwargs):
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
         'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
-        'Reg/Strategy', '1',
         'Icp/VoxelSize', '0.5',
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
@@ -126,7 +125,8 @@ def launch_setup(context, *args, **kwargs):
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Optimizer/Strategy': '1', # g2o
+            'Optimizer/Strategy': '1', # add..
+            
         }],
         #arguments=rtabmap_arguments,
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
@@ -148,14 +148,16 @@ def launch_setup(context, *args, **kwargs):
     actions = [
         rtabmap_util,
         rtabmap_slam,
-        rtabmap_rviz2,
     ]
 
     if mapping == 'false':
         # Call PublishMap after 2 seconds...
         publish_map_timer = TimerAction(
-            period= 2.0,
-            actions=[OpaqueFunction(function=call_publish_map_service)]
+            period= 5.0,
+            actions=[
+                OpaqueFunction(function=call_publish_map_service),
+                rtabmap_rviz2,
+                ]
         )
         actions.append(publish_map_timer)
 
