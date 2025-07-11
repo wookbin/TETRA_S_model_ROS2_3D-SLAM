@@ -74,6 +74,7 @@ def launch_setup(context, *args, **kwargs):
         'Mem/NotLinkedNodesKept', 'false',
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
+        'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
         'Reg/Strategy', '1',
         'Icp/VoxelSize', '0.5',
         'Icp/PointToPlaneK', '20',
@@ -125,6 +126,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
+            'Optimizer/Strategy': '1', # g2o
         }],
         #arguments=rtabmap_arguments,
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
