@@ -43,7 +43,7 @@ def launch_setup(context, *args, **kwargs):
         'Mem/LaserScanNormalK', '20',
         'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
         'Reg/Strategy', '1',
-        'Icp/VoxelSize', '0.5',
+        'Icp/VoxelSize', '0.15', # 0.5
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
@@ -88,6 +88,8 @@ def launch_setup(context, *args, **kwargs):
             'use_sim_time': use_sim_time,
             'Mem/IncrementalMemory': incremental_memory,
             'Mem/InitWMWithAllNodes': initwmwithallnodes,
+            'Mem/BinDataKept': 'false', # option add..
+            'Mem/ReduceGraph': 'true', # option add..
             'Grid/FromScan': 'true',
             'Grid/RayTracing':'true', # Fill empty space
             'Grid/3D': 'true', #'false',
@@ -97,7 +99,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Optimizer/Strategy': '1', # add..
+            'Optimizer/Strategy': '1',
 
         }],
         #arguments=rtabmap_arguments,
