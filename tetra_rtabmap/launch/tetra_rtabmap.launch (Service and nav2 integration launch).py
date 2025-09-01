@@ -126,7 +126,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/3D': 'true',
             'Grid/RangeMax': '15.0',
             'Grid/MaxObstacleHeight': '2.0',
-            'Grid/MaxGroundHeight': '0.05',
+            'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
