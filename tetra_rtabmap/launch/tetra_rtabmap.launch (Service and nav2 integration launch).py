@@ -75,7 +75,7 @@ def launch_setup(context, *args, **kwargs):
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
         'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
-        'Icp/VoxelSize', '0.15', # 0.5
+        'Icp/VoxelSize', '0.2', # 0.15
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
