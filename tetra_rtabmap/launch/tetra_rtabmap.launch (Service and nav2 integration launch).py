@@ -87,6 +87,8 @@ def launch_setup(context, *args, **kwargs):
         'Icp/OutlierRatio', '0.7',
         'Icp/CorrespondenceRatio', '0.2',
         'Rtabmap/DetectionRate', '10.0',
+        'Vis/MaxFeatures', '0', #add...not used 3D images..
+        'Vis/MinInliers', '0', #add...not used 3D images..
     ])
 
     rtabmap_util = Node(
