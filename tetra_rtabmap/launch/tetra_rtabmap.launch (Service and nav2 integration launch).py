@@ -75,13 +75,14 @@ def launch_setup(context, *args, **kwargs):
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
         'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
-        'Icp/VoxelSize', '0.2', # 0.15
+        'Icp/VoxelSize', '0.5', # 0.2
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
         'Icp/Iterations', '10',
         'Icp/Epsilon', '0.001',
-        'Icp/MaxTranslation', '3',
+        'Icp/MaxTranslation', '0.5', #3.0
+        'Icp/MaxRotation', '0.5', #0.78
         'Icp/MaxCorrespondenceDistance', '1',
         'Icp/Strategy', '1',
         'Icp/OutlierRatio', '0.7',
@@ -118,8 +119,8 @@ def launch_setup(context, *args, **kwargs):
             'use_sim_time': use_sim_time,
             'Mem/IncrementalMemory': incremental_memory,
             'Mem/InitWMWithAllNodes': initwmwithallnodes,
-            'Mem/BinDataKept': 'false', # option add..
-            'Mem/ReduceGraph': 'true', # option add..
+            'Mem/BinDataKept': 'true', # add... default: false
+            'Mem/ReduceGraph': 'true', # add... default: false
             'Grid/FromScan': 'true',
             'Grid/RayTracing': 'true',
             'Grid/3D': 'true',
@@ -192,3 +193,4 @@ def generate_launch_description():
         DeclareLaunchArgument('db_name', default_value='rtabmap', description='Name of the .db file without extension'),
         OpaqueFunction(function=launch_setup),
     ])
+
