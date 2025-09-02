@@ -1426,7 +1426,7 @@ public:
 		bool bResult = false;
 		float m_fdistance = 0.0;
 		m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
-		if(m_iBack_cnt < 50)
+		if(m_iBack_cnt < 100) //50
 		{
 			if(_pFlag_Value.m_bFlag_Obstacle_cygbot) 
 			{
