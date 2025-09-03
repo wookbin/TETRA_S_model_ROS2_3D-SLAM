@@ -23,7 +23,7 @@ def call_publish_map_service(context):
 
     request = PublishMap.Request()
     request.global_map = True
-    request.optimized = False
+    request.optimized = True  #False
     request.graph_only = False
 
     future = client.call_async(request)
