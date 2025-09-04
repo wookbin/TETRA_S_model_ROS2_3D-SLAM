@@ -10,7 +10,6 @@ def launch_setup(context, *args, **kwargs):
     use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context).lower()
     use_sim_time = (use_sim_time_str == 'true')
     lidar_topic = LaunchConfiguration('lidar_topic').perform(context)
-    imu_topic = LaunchConfiguration('imu_topic').perform(context)
     db_name = LaunchConfiguration('db_name').perform(context)
     db_path = f'/home/tetra/.ros/{db_name}.db'
     
@@ -31,17 +30,17 @@ def launch_setup(context, *args, **kwargs):
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
         'Optimizer/Strategy','1',
-        'Icp/VoxelSize', '0.1',
-        'Icp/PointToPlaneK', '15', #20
+        'Icp/VoxelSize', '0.05',
+        'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '10',
+        'Icp/Iterations', '20',
         'Icp/Epsilon', '0.001',
-        'Icp/MaxTranslation', '0.5', #3.0
-        'Icp/MaxRotation', '0.5', #0.78
-        'Icp/MaxCorrespondenceDistance', '0.5', # 1.0
+        'Icp/MaxTranslation', '0.3',
+        'Icp/MaxRotation', '0.3',
+        'Icp/MaxCorrespondenceDistance', '0.3',
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.6', # 0.7
+        'Icp/OutlierRatio', '0.1',
         'Icp/CorrespondenceRatio', '0.2',
         'Rtabmap/DetectionRate', '10.0',
         'Vis/MaxFeatures', '0',
@@ -53,11 +52,15 @@ def launch_setup(context, *args, **kwargs):
         executable='point_cloud_assembler',
         output='screen',
         parameters=[{
-            'max_clouds': 50, # 20
-            'assembling_time': 0.5, #0.1
-            'fixed_frame_id': 'map',
+            #'max_clouds': 10,
+            'assembling_time': 0.1,
+            'fixed_frame_id': 'base_footprint',
             'use_sim_time': use_sim_time,
-        }]
+        }],
+        remappings=[
+        ('cloud', lidar_topic),
+        # ('assembled_cloud', 'assembled_cloud')
+        ]
     )
 
     rtabmap_slam = Node(
@@ -71,7 +74,7 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'wait_for_transform': 0.2,
+            'wait_for_transform': 0.5,
             'use_sim_time': use_sim_time,
             'Mem/IncrementalMemory': incremental_memory,
             'Mem/InitWMWithAllNodes': initwmwithallnodes,
@@ -80,22 +83,21 @@ def launch_setup(context, *args, **kwargs):
             'Grid/FromScan': 'true',
             'Grid/RayTracing': 'true',
             'Grid/3D': 'true',
-            'Grid/RangeMax': '15.0',
+            'Grid/RangeMax': '20.0',
             'Grid/MaxObstacleHeight': '2.0',
-            'Grid/MaxGroundHeight': '0.5', #0.05
+            'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
             'Optimizer/Strategy': '1',
-            'Reg/Force3DoF': 'true', #add.. only 2D pose
+            'Reg/Force3DoF': 'true',
             
         }],
-        #arguments=rtabmap_arguments,
-        arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
-            ('scan_cloud', lidar_topic),
+            ('scan_cloud', 'assembled_cloud'), #lidar_topic
             ('odom', 'odom'),
         ],
+        arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
     )
 
     rtabmap_rviz2 = Node(
@@ -119,9 +121,6 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('lidar_topic', default_value='/livox/lidar'),
-        DeclareLaunchArgument('imu_topic', default_value='/imu/data'),
         DeclareLaunchArgument('db_name', default_value='rtabmap', description='Name of the .db file without extension'),
         OpaqueFunction(function=launch_setup),
     ])
-
-
