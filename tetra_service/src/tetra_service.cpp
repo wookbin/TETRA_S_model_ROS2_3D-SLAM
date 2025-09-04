@@ -317,7 +317,7 @@ public:
 
 		//publish list/////////////////////////////////////////////////////////////////////////////////////
 		//cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-		cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_manual", 10);
+		cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_nav", 10);
 		pose_reset_publisher = this->create_publisher<std_msgs::msg::Int32>("pose_reset", 10);
 		initial_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 		movebase_publisher = this->create_publisher<std_msgs::msg::Int32>("movebase", 10);
