@@ -32,7 +32,7 @@ def wait_and_publish_then_start_nav(context, *args, **kwargs):
 
     req = PublishMap.Request()
     req.global_map = True
-    req.optimized = False
+    req.optimized = True #False
     req.graph_only = False
 
     future = client.call_async(req)
@@ -101,15 +101,15 @@ def launch_setup(context, *args, **kwargs):
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '20',
+        'Icp/Iterations', '30', #20
         'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.3',
+        'Icp/MaxCorrespondenceDistance', '0.25', #0.3
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.1',
+        'Icp/OutlierRatio', '0.05', #0.1
         'Icp/CorrespondenceRatio', '0.2',
-        'Rtabmap/DetectionRate', '10.0',
+        'Rtabmap/DetectionRate', '5.0', #10.0
         'Vis/MaxFeatures', '0',
         'Vis/MinInliers', '0',
     ])
