@@ -319,7 +319,8 @@ public:
 		//cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 		cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_nav", 10);
 		pose_reset_publisher = this->create_publisher<std_msgs::msg::Int32>("pose_reset", 10);
-		initial_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+		//initial_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
+		initial_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose",rclcpp::QoS(1).transient_local().reliable()); //rtabmap_localization
 		movebase_publisher = this->create_publisher<std_msgs::msg::Int32>("movebase", 10);
 		footprint_publisher = this->create_publisher<geometry_msgs::msg::Pose>("footprint", 10);
 		//bumper_pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>("bumper_pointcloud", 10);
@@ -355,8 +356,8 @@ public:
 		joy_subscriber = this->create_subscription<sensor_msgs::msg::Joy>(
 			"joy", rclcpp::SensorDataQoS(), std::bind(&TETRA_SERVICE::joyCallback, this, _1));
 
-		particlecloud_subscriber = this->create_subscription<nav2_msgs::msg::ParticleCloud>(
-			"particle_cloud", rclcpp::SensorDataQoS(), std::bind(&TETRA_SERVICE::AMCL_PaticleCloud_Callback, this, _1)); //particle_cloud
+		//particlecloud_subscriber = this->create_subscription<nav2_msgs::msg::ParticleCloud>(
+		//	"particle_cloud", rclcpp::SensorDataQoS(), std::bind(&TETRA_SERVICE::AMCL_PaticleCloud_Callback, this, _1)); //particle_cloud
 			
 		cmd_vel_subscriber = this->create_subscription<geometry_msgs::msg::Twist>(
 			"cmd_vel", rclcpp::SensorDataQoS(), std::bind(&TETRA_SERVICE::cmd_vel_Callback, this, _1));
@@ -437,7 +438,7 @@ public:
 		set_pose_client_ = this->create_client<robot_localization::srv::SetPose>("set_pose");
 		
 		// Set Max Speed parameter client
-        	set_speed_parameter_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "controller_server");
+        set_speed_parameter_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "controller_server");
 
 		//Action list///////////////////////////////////////////////////////////////////////////////////////
 		nav_to_pose_action_client = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
@@ -472,8 +473,8 @@ public:
 	rclcpp::TimerBase::SharedPtr timer_;
 	rclcpp::TimerBase::SharedPtr TF_timer_;
 	rclcpp::TimerBase::SharedPtr Footprint_timer_;
-    	std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-    	std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
+    std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
 	//Publisher ////////////////////////////////////////////////////////////////////////////////////////
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher;
@@ -492,7 +493,7 @@ public:
 	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr conveyor_sensor_subscriber;   //Option
 	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr conveyor_movement_subscriber; //Option
 	rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber; //joystick
-	rclcpp::Subscription<nav2_msgs::msg::ParticleCloud>::SharedPtr particlecloud_subscriber; //AMCL particlecloud Subscribe
+	//rclcpp::Subscription<nav2_msgs::msg::ParticleCloud>::SharedPtr particlecloud_subscriber; //AMCL particlecloud Subscribe
 	rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initialpose_subscriber; //2D Pose Estimate
 	rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscriber;
 	rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber;
@@ -512,6 +513,7 @@ public:
 	}
 
 	//AMCL_
+	/*
 	void AMCL_PaticleCloud_Callback(const nav2_msgs::msg::ParticleCloud::SharedPtr msg) //nav2_msgs::msg::ParticleCloud
 	{
 		auto m_request3 = std::make_shared<std_srvs::srv::Empty::Request>();
@@ -541,6 +543,7 @@ public:
 		}
 		
 	}
+	*/
 
 	void Initialpose_Callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 	{
@@ -928,6 +931,8 @@ public:
 	{
 		//Reset robot localization reset call/////////////////////////////////////////////
 		auto request = std::make_shared<robot_localization::srv::SetPose::Request>();
+		request->pose.header.stamp = this->now(); //rclcpp::Time();
+  		request->pose.header.frame_id = "map";
 		// Fill the request with the desired pose
 		request->pose.pose.pose.position.x = 0.0; // Set desired x position
 		request->pose.pose.pose.position.y = 0.0; // Set desired y position
@@ -941,9 +946,11 @@ public:
 		request->pose.pose.covariance[6 * 1 + 1] = 0.25;
 		request->pose.pose.covariance[6 * 5 + 5] = 0.06853892326654787;
 		// Call the service
-        	auto result_future = set_pose_client_->async_send_request(request);
+        auto result_future = set_pose_client_->async_send_request(request);
+		//wait TF update...
+		rclcpp::sleep_for(std::chrono::milliseconds(50));
 		///////////////////////////////////////////////////////////////////////////////////
-		initPose.header.stamp = rclcpp::Time();
+		initPose.header.stamp = this->now(); //rclcpp::Time();
 		initPose.header.frame_id = "map";
 		//position
 		initPose.pose.pose.position.x = 0.0;
@@ -957,6 +964,7 @@ public:
 		initPose.pose.covariance[0] = 0.25;
 		initPose.pose.covariance[6 * 1 + 1] = 0.25;
 		initPose.pose.covariance[6 * 5 + 5] = 0.06853892326654787;
+		
 		initial_pose_publisher->publish(initPose);
 	}
 
@@ -1024,7 +1032,7 @@ public:
 				}
 			}
 			fclose(fp);
-			initPose.header.stamp = rclcpp::Time();
+			initPose.header.stamp = this->now(); //rclcpp::Time();
 			initPose.header.frame_id = "map";
 			//position
 			initPose.pose.pose.position.x = _pLandMarkPose.init_position_x;
@@ -1082,9 +1090,9 @@ public:
 		try 
 		{
 			rclcpp::Time now = this->get_clock()->now();
-		    	// Lookup the transform from the target frame to "footprint"
-		    	geometry_msgs::msg::TransformStamped transformStamped;
-		    	transformStamped = tf2_buffer_->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
+		    // Lookup the transform from the target frame to "footprint"
+		    geometry_msgs::msg::TransformStamped transformStamped;
+		    transformStamped = tf2_buffer_->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
 
 			//position
 			_pTF_pose.poseTFx = transformStamped.transform.translation.x;
@@ -1110,11 +1118,11 @@ public:
 			m.getRPY(_pTF_pose.pose_euler_roll, _pTF_pose.pose_euler_pitch, _pTF_pose.pose_euler_yaw);
 			_pTF_pose.theta_deg = _pTF_pose.pose_euler_yaw * (180.0/M_PI);
 
-        	} 
+        } 
 		catch (tf2::TransformException &ex) 
 		{
-            		RCLCPP_WARN(this->get_logger(), "Could not transform odom to footprint: %s", ex.what());
-        	}
+            RCLCPP_WARN(this->get_logger(), "Could not transform odom to footprint: %s", ex.what());
+        }
 
 	}
 
@@ -1887,7 +1895,7 @@ public:
 	}
 
 	// Send Goal function//
-    	void Set_goal(double position_x, double position_y, double position_z, 
+    void Set_goal(double position_x, double position_y, double position_z, 
 				   double orientation_x, double orientation_y,double  orientation_z, double orientation_w) 
 	{
         	//Wait Action server..
@@ -1896,31 +1904,31 @@ public:
 			RCLCPP_INFO(get_logger(), "Waiting for action server...");
 		}
 
-		auto goal_msg = NavigateToPose::Goal();
+			auto goal_msg = NavigateToPose::Goal();
         	goal_msg.pose.header.stamp = this->now();
-		goal_msg.pose.header.frame_id = "map";
-		goal_msg.pose.pose.position.x = position_x;
-		goal_msg.pose.pose.position.y = position_y;
-		goal_msg.pose.pose.position.z = position_z;
-		goal_msg.pose.pose.orientation.x = orientation_x;
-		goal_msg.pose.pose.orientation.y = orientation_y;
-		goal_msg.pose.pose.orientation.z = orientation_z;
-		goal_msg.pose.pose.orientation.w = orientation_w;
+			goal_msg.pose.header.frame_id = "map";
+			goal_msg.pose.pose.position.x = position_x;
+			goal_msg.pose.pose.position.y = position_y;
+			goal_msg.pose.pose.position.z = position_z;
+			goal_msg.pose.pose.orientation.x = orientation_x;
+			goal_msg.pose.pose.orientation.y = orientation_y;
+			goal_msg.pose.pose.orientation.z = orientation_z;
+			goal_msg.pose.pose.orientation.w = orientation_w;
 
         	auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
-		send_goal_options.feedback_callback = std::bind(&TETRA_SERVICE::feedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
-		send_goal_options.result_callback = std::bind(&TETRA_SERVICE::resultCallback, this, std::placeholders::_1);
+			send_goal_options.feedback_callback = std::bind(&TETRA_SERVICE::feedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
+			send_goal_options.result_callback = std::bind(&TETRA_SERVICE::resultCallback, this, std::placeholders::_1);
 
-		////Send Goal//
-		//nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
-		
-		// Update the desired_linear_vel parameter
-		auto parameters = std::vector<rclcpp::Parameter>();
-		parameters.emplace_back(rclcpp::Parameter("FollowPath.desired_linear_vel", _pDynamic_param.MAX_Linear_velocity));
-		set_speed_parameter_client_->set_parameters(parameters);
-		_pDynamic_param.m_bFlag_onetime = true;
-
-		nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
+			////Send Goal//
+			//nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
+			
+			// Update the desired_linear_vel parameter
+			auto parameters = std::vector<rclcpp::Parameter>();
+			parameters.emplace_back(rclcpp::Parameter("FollowPath.desired_linear_vel", _pDynamic_param.MAX_Linear_velocity));
+			set_speed_parameter_client_->set_parameters(parameters);
+			_pDynamic_param.m_bFlag_onetime = true;
+	
+			nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
 
     	}
 
@@ -1946,7 +1954,7 @@ public:
 		
 		//Check robot status : noaml or docking?
 		if(_pRobot.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5)) //Nomal
-    		{
+    	{
 			RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
 
 			//Nav Goal call///////////////////////////////////////////////////////
@@ -2009,7 +2017,7 @@ public:
 		
 		//Check robot status : noaml or docking?
 		if(_pRobot.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5)) //Nomal
-			{
+		{
 			RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
 		
 			//Nav Goal call///////////////////////////////////////////////////////
@@ -2021,7 +2029,7 @@ public:
 		else
 		{
 			m_iDocking_CommandMode = 10; //Depart Move
-				bResult = true;
+			bResult = true;
 		
 		}
 		
@@ -2181,9 +2189,9 @@ public:
         auto request = std::make_shared<interfaces::srv::LedToggleControl::Request>();
         request->de_index = de_index;
         request->light_accel = light_accel;
-	request->led_high_brightness = led_high_brightness;
-	request->light_decel = light_decel;
-	request->led_low_brightness = led_low_brightness;
+		request->led_high_brightness = led_high_brightness;
+		request->light_decel = light_decel;
+		request->led_low_brightness = led_low_brightness;
 
 
         auto result_future = led_toggle_control_client->async_send_request(
@@ -2224,11 +2232,11 @@ public:
 
         // Create and send the request
         auto request = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
-	auto request2 = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
-	auto future = clear_entire_global_costmap_client->async_send_request(request);
+		auto request2 = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
+		auto future = clear_entire_global_costmap_client->async_send_request(request);
         auto future2 = clear_entire_local_costmap_client->async_send_request(request2);
         
-	return true;
+		return true;
     }
 
  
@@ -2284,7 +2292,7 @@ int main(int argc, char * argv[])
 
 	//LED On
 	node->LedToggleControl_Call(1,3,100,3,1);
-    	node->ToggleOn_Call(63);
+    node->ToggleOn_Call(63);
 	/////////////////////////////////////////////////////////////////
 	printf("□□■■■■□□□■■■■■■□□■■■■■□□□■□□□□□■□■□□□□■■■■□□□■■■■■■□\n");
 	printf("□■□□□□■□□■□□□□□□□■□□□□■□□■□□□□□■□■□□□■□□□□■□□■□□□□□□\n");
