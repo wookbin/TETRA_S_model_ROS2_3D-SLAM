@@ -13,13 +13,13 @@ from rtabmap_msgs.srv import PublishMap
 
 def wait_and_publish_then_start_nav(context, *args, **kwargs):
     use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context).lower()
-    use_sim_time = (use_sim_time_str == 'true')
 
+    # 1) PublishMap 호출만 수행 (RViz는 이미 실행됨)
     rclpy.init()
     node = RclpyNode('publish_map_client')
     client = node.create_client(PublishMap, '/rtabmap/publish_map')
 
-    max_wait_sec = 600 #max 10 minutes
+    max_wait_sec = 600  # max 10 minutes
     waited = 0
     while not client.wait_for_service(timeout_sec=1.0):
         node.get_logger().info('Waiting for /rtabmap/publish_map ...')
@@ -28,15 +28,16 @@ def wait_and_publish_then_start_nav(context, *args, **kwargs):
             node.get_logger().error('Timeout waiting for /rtabmap/publish_map')
             node.destroy_node()
             rclpy.shutdown()
-            return []
+            return []  # 실패 시 이후 액션 생략
 
     req = PublishMap.Request()
     req.global_map = True
-    req.optimized = True #False
+    req.optimized = True
     req.graph_only = False
 
     future = client.call_async(req)
-    rclpy.spin_until_future_complete(node, future, timeout_sec=60.0)
+    # 완료될 때까지 대기 (초기 퍼블리시가 오래 걸릴 수 있음)
+    rclpy.spin_until_future_complete(node, future)
 
     if future.result() is None:
         node.get_logger().error('PublishMap call failed')
@@ -48,22 +49,7 @@ def wait_and_publish_then_start_nav(context, *args, **kwargs):
     node.destroy_node()
     rclpy.shutdown()
 
-    rviz_config_file = 'tetra_3d_navigation2.rviz'
-    rviz_config_dir = os.path.join(
-        get_package_share_directory('tetra_rtabmap'),
-        'rviz',
-        rviz_config_file
-    )
-
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', rviz_config_dir],
-        parameters=[{'use_sim_time': use_sim_time}],
-        output='screen'
-    )
-
+    # 2) 퍼블리시 성공 후 Nav2 포함
     include_nav = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -75,7 +61,7 @@ def wait_and_publish_then_start_nav(context, *args, **kwargs):
         launch_arguments={'use_sim_time': use_sim_time_str}.items()
     )
 
-    return [rviz_node, include_nav]
+    return [include_nav]
 
 
 def launch_setup(context, *args, **kwargs):
@@ -96,24 +82,25 @@ def launch_setup(context, *args, **kwargs):
         'Mem/NotLinkedNodesKept', 'false',
         'Mem/STMSize', '30',
         'Mem/LaserScanNormalK', '20',
-        'Optimizer/Strategy','1',
+        'Optimizer/Strategy', '1',
         'Icp/VoxelSize', '0.05',
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '30', #20
+        'Icp/Iterations', '30',  # 20
         'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.25', #0.3
+        'Icp/MaxCorrespondenceDistance', '0.25',  # 0.3
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.05', #0.1
+        'Icp/OutlierRatio', '0.05',  # 0.1
         'Icp/CorrespondenceRatio', '0.2',
-        'Rtabmap/DetectionRate', '5.0', #10.0
+        'Rtabmap/DetectionRate', '5.0',  # 10.0
         'Vis/MaxFeatures', '0',
-        'Vis/MinInliers', '0',
+        'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
     ])
 
+    # 1) rtabmap 먼저
     rtabmap_slam = Node(
         package='rtabmap_slam',
         executable='rtabmap',
@@ -142,7 +129,7 @@ def launch_setup(context, *args, **kwargs):
             'database_path': db_path,
             'Optimizer/Strategy': '1',
             'Reg/Force3DoF': 'true',
-            'RGBD/StartAtOrigin': 'true', #add..
+            'RGBD/StartAtOrigin': 'true',
         }],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
@@ -151,12 +138,29 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+    # 2) RViz를 먼저 띄움 (퍼블리시보다 먼저 구독 시작)
+    rviz_config_file = 'tetra_3d_navigation2.rviz'
+    rviz_config_dir = os.path.join(
+        get_package_share_directory('tetra_rtabmap'),
+        'rviz',
+        rviz_config_file
+    )
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config_dir],
+        parameters=[{'use_sim_time': use_sim_time}],
+        output='screen'
+    )
+
+    # 3) 잠깐 대기 후 PublishMap 호출 → 성공 시 Nav2 포함
     publish_then_nav = TimerAction(
         period=2.0,
         actions=[OpaqueFunction(function=wait_and_publish_then_start_nav)]
     )
 
-    return [rtabmap_slam, publish_then_nav]
+    return [rtabmap_slam, rviz_node, publish_then_nav]
 
 
 def generate_launch_description():
