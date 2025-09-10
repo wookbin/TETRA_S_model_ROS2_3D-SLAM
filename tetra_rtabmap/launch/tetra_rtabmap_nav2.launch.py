@@ -142,6 +142,7 @@ def launch_setup(context, *args, **kwargs):
             'database_path': db_path,
             'Optimizer/Strategy': '1',
             'Reg/Force3DoF': 'true',
+            'RGBD/StartAtOrigin': 'true', #add..
         }],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
