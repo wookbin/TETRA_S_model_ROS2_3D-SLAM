@@ -103,7 +103,7 @@ def launch_setup(context, *args, **kwargs):
         'Rtabmap/DetectionRate', '2.0',         # 5.0 → 2.0 (보정 빈도 ↑, 과도한 CPU 방지)
         'RGBD/ProximityBySpace', 'true',
         'RGBD/ProximityMaxGraphDepth', '0',     # 전체 그래프에서 후보 탐색
-        'RGBD/ProximityPathMaxNeighbors', '2',  # 1 → 2 (근접 후보 소폭 확대)
+        'RGBD/ProximityPathMaxNeighbors', '1',  # 1 → 2 (근접 후보 소폭 확대)
         'RGBD/NeighborLinkRefining', 'true',
         'RGBD/LocalLoopDetectionSpace', 'true',
         'RGBD/LocalLoopDetectionTime', 'true',
