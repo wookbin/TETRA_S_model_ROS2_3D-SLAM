@@ -126,7 +126,7 @@ def launch_setup(context, *args, **kwargs):
             'topic_queue_size': 30,         # 동기화 유연성
             'sync_queue_size': 30,          # 동기화 유연성
             'queue_size': 30,               # 동기화 유연성
-            'wait_for_transform': 0.5,
+            'wait_for_transform': 0.2,
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'true',
