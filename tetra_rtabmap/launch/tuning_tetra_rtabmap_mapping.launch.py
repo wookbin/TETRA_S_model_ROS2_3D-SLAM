@@ -12,9 +12,6 @@ def launch_setup(context, *args, **kwargs):
     lidar_topic = LaunchConfiguration('lidar_topic').perform(context)
     db_name = LaunchConfiguration('db_name').perform(context)
     db_path = f'/home/tetra/.ros/{db_name}.db'
-    
-    #incremental_memory = 'true'
-    #initwmwithallnodes = 'false'
     rviz_config_file = 'rtabmap_mapping.rviz'
     
     rviz_config_dir = os.path.join(
@@ -36,19 +33,19 @@ def launch_setup(context, *args, **kwargs):
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '30', #20
-        'Icp/Epsilon', '0.005', #0.001
+        'Icp/Iterations', '30',
+        'Icp/Epsilon', '0.005',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
         'Icp/MaxCorrespondenceDistance', '0.3',
         'Icp/Strategy', '1',
         'Icp/OutlierRatio', '0.1',
-        'Icp/CorrespondenceRatio', '0.1', #0.2
+        'Icp/CorrespondenceRatio', '0.1',
         'Vis/MaxFeatures', '1000', #0
         'Vis/MinInliers', '15', #0
         'Rtabmap/DetectionRate', '1.0', #10.0
-        'RGBD/LinearUpdate', '0.20',        # 20cm 이상 이동해야 새 키프레임
-        'RGBD/AngularUpdate', '0.10',       # 6° 이상 회전해야 새 키프레임
+        'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
+        'RGBD/AngularUpdate', '0.05',       # 2.86° 이상 회전해야 새 키프레임
         'RGBD/CreateIntermediateNodes', 'false',
         'RGBD/LocalLoopDetectionSpace', 'true',
         'RGBD/LocalLoopDetectionTime', 'true',
@@ -99,13 +96,12 @@ def launch_setup(context, *args, **kwargs):
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Optimizer/Strategy': '1',
             'Reg/Force3DoF': 'true',
             
         }],
         remappings=[
             ('scan_cloud', 'assembled_cloud'), #lidar_topic
-            ('odom', 'odom'),
+            ('odom', '/odometry/filtered'),
         ],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
     )
