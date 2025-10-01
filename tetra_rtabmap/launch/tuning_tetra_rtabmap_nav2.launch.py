@@ -108,7 +108,7 @@ def launch_setup(context, *args, **kwargs):
         'RGBD/LocalLoopDetectionTime', 'true',
         'RGBD/LocalLoopDetectionRadius', '5.0', # 경로 반복 반경에 맞춰 4~8m 사이로 조정
         'RGBD/StartAtOrigin', 'true', # mapping mode: false || localization mode: true
-        'RGBD/MaxOdomCacheSize', '10',#10
+        'RGBD/MaxOdomCacheSize', '5',#10
     ])
 
 
