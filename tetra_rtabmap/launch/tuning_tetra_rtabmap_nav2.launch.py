@@ -71,9 +71,6 @@ def launch_setup(context, *args, **kwargs):
     db_name = LaunchConfiguration('db_name').perform(context)
     db_path = f'/home/tetra/.ros/{db_name}.db'
 
-    #incremental_memory = 'false'
-    #initwmwithallnodes = 'true'
-
     if not os.path.isfile(db_path):
         raise RuntimeError(f"Map file not found at {db_path}")
 
@@ -90,26 +87,30 @@ def launch_setup(context, *args, **kwargs):
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
         'Icp/Iterations', '30',
-        'Icp/Epsilon', '0.0005',
+        'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
         'Icp/MaxCorrespondenceDistance', '0.25',
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.05',  # 0.1
-        'Icp/CorrespondenceRatio', '0.1', #0.2
-        #'Vis/MaxFeatures', '0',
-        #'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
+        'Icp/OutlierRatio', '0.05',
+        'Icp/CorrespondenceRatio', '0.1',
+        'Vis/MaxFeatures', '0', #0
+        'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
         # 근접/로컬 루프 매칭(= map→odom 보정 촘촘히)
-        'Rtabmap/DetectionRate', '2.0',         # 5.0 → 2.0 (보정 빈도 ↑, 과도한 CPU 방지)
+        'Rtabmap/DetectionRate', '3.0',         # 5.0 → 3.0 (보정 빈도 ↑, 과도한 CPU 방지)
+        'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
+        'RGBD/AngularUpdate', '0.05',       # 2.86° 이상 회전해야 새 키프레임
         'RGBD/ProximityBySpace', 'true',
         'RGBD/ProximityMaxGraphDepth', '0',     # 전체 그래프에서 후보 탐색
-        'RGBD/ProximityPathMaxNeighbors', '1',  # 1 → 2 (근접 후보 소폭 확대)
+        'RGBD/ProximityPathMaxNeighbors', '1', #1
         'RGBD/NeighborLinkRefining', 'true',
         'RGBD/LocalLoopDetectionSpace', 'true',
         'RGBD/LocalLoopDetectionTime', 'true',
         'RGBD/LocalLoopDetectionRadius', '5.0', # 경로 반복 반경에 맞춰 4~8m 사이로 조정
         'RGBD/StartAtOrigin', 'true', # mapping mode: false || localization mode: true
+        'RGBD/MaxOdomCacheSize', '10',#10
     ])
+
 
     # 1) rtabmap 먼저
     rtabmap_slam = Node(
@@ -123,29 +124,28 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 30,         # 동기화 유연성
-            'sync_queue_size': 30,          # 동기화 유연성
-            'queue_size': 30,               # 동기화 유연성
-            'wait_for_transform': 0.2,
+            'topic_queue_size': 100,         # 동기화 유연성
+            'sync_queue_size': 100,          # 동기화 유연성
+            'queue_size': 100,               # 동기화 유연성
+            'wait_for_transform': 0.5, #1.0
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'true',
             'Grid/FromScan': 'true',
             'Grid/RayTracing': 'true',
-            'Grid/3D': 'true',
+            'Grid/3D': 'false',
             'Grid/RangeMax': '25.0',
             'Grid/MaxObstacleHeight': '2.0',
             'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Optimizer/Strategy': '1',
             'Reg/Force3DoF': 'true',
         }],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
             ('scan_cloud', lidar_topic),
-            ('odom', 'odom'),
+            ('odom', '/odometry/filtered'),
         ],
     )
 
