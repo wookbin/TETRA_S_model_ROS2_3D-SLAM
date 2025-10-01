@@ -32,18 +32,22 @@ def launch_setup(context, *args, **kwargs):
         'Icp/VoxelSize', '0.05',
         'Icp/PointToPlaneK', '20',
         'Icp/PointToPlaneRadius', '0',
-        'Icp/PointToPlane', 'true',
+        'Icp/PointToPlane', 'false', #true
         'Icp/Iterations', '30',
         'Icp/Epsilon', '0.005',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.3',
+        'Icp/MaxCorrespondenceDistance', '0.15',
         'Icp/Strategy', '1',
         'Icp/OutlierRatio', '0.1',
-        'Icp/CorrespondenceRatio', '0.1',
-        'Vis/MaxFeatures', '1000', #0
-        'Vis/MinInliers', '15', #0
+        'Icp/CorrespondenceRatio', '0.2', #0.1
+        'Vis/MaxFeatures', '0', #0
+        'Vis/MinInliers', '12', #0
         'Rtabmap/DetectionRate', '1.0', #10.0
+        'RGBD/NeighborLinkRefining', 'true',
+        'RGBD/ProximityBySpace', 'true', 
+        'RGBD/ProximityByTime', 'false', 
+        'RGBD/ProximityPathMaxNeighbors', '10',
         'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
         'RGBD/AngularUpdate', '0.05',       # 2.86° 이상 회전해야 새 키프레임
         'RGBD/CreateIntermediateNodes', 'false',
@@ -51,6 +55,8 @@ def launch_setup(context, *args, **kwargs):
         'RGBD/LocalLoopDetectionTime', 'true',
         'RGBD/LocalLoopDetectionRadius', '3.0',   # 반경 3m에서 loop 후보 찾기
         'RGBD/StartAtOrigin', 'false', # mapping mode: false || localization mode: true
+        'RGBD/OptimizeFromGraphEnd', 'false',
+        'RGBD/OptimizeMaxError', '4',
     ])
 
     rtabmap_util = Node(
@@ -60,7 +66,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{
             #'max_clouds': 10,
             'assembling_time': 0.1,
-            'fixed_frame_id': 'base_footprint',
+            'fixed_frame_id': 'odom', #'base_footprint',
             'use_sim_time': use_sim_time,
         }],
         remappings=[
@@ -80,9 +86,9 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 30,         # 동기화 유연성
-            'sync_queue_size': 30,          # 동기화 유연성
-            'queue_size': 30,               # 동기화 유연성
+            'topic_queue_size': 100,         # 동기화 유연성
+            'sync_queue_size': 100,          # 동기화 유연성
+            'queue_size': 100,               # 동기화 유연성
             'wait_for_transform': 0.5,
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
@@ -96,7 +102,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Reg/Force3DoF': 'true',
+            'Reg/Force3DoF': 'true', # 2D SLAM
             
         }],
         remappings=[
