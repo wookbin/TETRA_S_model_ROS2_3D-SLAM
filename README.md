@@ -11,7 +11,7 @@ ros2-jazzy version package
 - SICK Tim571: https://github.com/SICKAG/sick_scan_xd
 - Cygbot D2: https://github.com/CygLiDAR-ROS/cyglidar_d2
 - Realsense D435F: https://github.com/IntelRealSense/realsense-ros
-- usb_cam: https://github.com/ros-drivers/usb_cam
+- usb_cam: https://github.com/ros-drivers/usb_cam #option
 - IAHRS : https://github.com/wookbin/iahrs_driver_ros2
 - Livox MID-360: https://github.com/Livox-SDK/livox_ros_driver2
 
