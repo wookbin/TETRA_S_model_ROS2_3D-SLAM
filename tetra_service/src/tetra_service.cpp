@@ -2320,7 +2320,9 @@ int main(int argc, char * argv[])
 				//printf("[SUM]m_iPose_reset_cnt: %d \n", m_iPose_reset_cnt);
 				printf("RESET Robot POSE Call!!!\n");
 				node->Clear_Costmap();
-				node->Reset_Robot_Pose();
+				//node->Reset_Robot_Pose();
+				node->ImuReset_Call();
+				node->Reset_EKF_SetPose();
 				m_iPose_reset_cnt = 0;
 			}
 			else
