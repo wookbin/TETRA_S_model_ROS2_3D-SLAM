@@ -1521,7 +1521,7 @@ public:
 			if(m_iNoMarker_cnt >= 10)
 			{
 				m_iNoMarker_cnt = 0;
-				m_iDocking_CommandMode = 8;
+				m_iDocking_CommandMode = 1;
 				printf("[ChargingStation_tracking2] No Marker 2_Timeout! \n");
 			}
 			else
@@ -1548,11 +1548,11 @@ public:
 				case 1:
 					printf("Docking Loop 1 Start... \n");
 					LedToggleControl_Call(1,3,100,3,100);
-    					ToggleOn_Call(63);
+    				ToggleOn_Call(63);
 					m_iDocking_CommandMode = 2;
 					break;
 				case 2:
-					//printf("Docking Loop 2... \n");
+					printf("Docking Loop 2... \n");
 					_pRobot.HOME_id = _pRobot.m_iDocking_id;
 					ChargingStation_tracking(true, _pRobot.HOME_id);
 					if(_pRobot.m_bFalg_DockingExit)
