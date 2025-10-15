@@ -450,7 +450,7 @@ int main(int argc, char * argv[])
 		coordinates[i] = 0;
 	}
 
-	rclcpp::WallRate loop_rate(50); //default: 30HZ
+	rclcpp::WallRate loop_rate(60); //default: 30HZ
 	sprintf(port, "/dev/ttyS0");
 	//sprintf(port, "/dev/TETRA");
 	//RS232 Connect
