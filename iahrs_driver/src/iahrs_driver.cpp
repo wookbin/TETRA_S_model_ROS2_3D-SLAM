@@ -271,7 +271,7 @@ int main (int argc, char** argv)
 	node->imu_data_msg.orientation_covariance[8] = 0.006*(M_PI/180.0);
 
 
-	rclcpp::WallRate loop_rate(50); //50Hz
+	rclcpp::WallRate loop_rate(60); //60Hz
 	node->serial_open();
 	node->SendRecv("za\n", dSend_Data, 10);	// Euler Angle -> '0.0' Reset
 	usleep(10000);
