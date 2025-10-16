@@ -87,6 +87,9 @@ bool m_bForwardCheck = false;
 //Joystick Enable & Disable
 bool m_bFlag_joy_enable = false;
 
+//add...odometry reset flag
+bool m_bReset_odometry = false;
+
 std::atomic<bool> stop_requested(false);
 void signal_handler(int signal) 
 {
@@ -109,6 +112,8 @@ public:
 		emg_publisher = this->create_publisher<std_msgs::msg::Int32>("emg_state", 1);
 		left_error_code_publisher = this->create_publisher<std_msgs::msg::Int32>("left_error_code", 1);
 		right_error_code_publisher = this->create_publisher<std_msgs::msg::Int32>("right_error_code", 1);
+		//test_wbjin
+		cmd_vel_joy_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_nav", 10);
 
 		//subscribe list////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		joy_subscriber = this->create_subscription<sensor_msgs::msg::Joy>("joy", rclcpp::SensorDataQoS(), std::bind(&TETRA::joyCallback, this, _1));
@@ -160,6 +165,9 @@ public:
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr emg_publisher;
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr left_error_code_publisher;
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr right_error_code_publisher;
+	//test_wbjin
+	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_joy_publisher;
+	geometry_msgs::msg::Twist cmd;
 
 	//Subscription
 	rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber;
@@ -291,6 +299,11 @@ public:
 			////Two Hand Joystick
 			angular = ((double)joy_angular * (joy->axes[1] >= 0 ? joy->axes[2] : (joy->axes[2] * -1) ) + bt_angular) / 3.0;
 
+			//test_wbjin
+			cmd.linear.x = linear; 
+			cmd.angular.z = angular;
+			cmd_vel_joy_publisher->publish(cmd);
+
 		}
 		
 	}
@@ -301,6 +314,7 @@ public:
 		if(Reset == 1)
 		{
 			dssp_rs232_drv_module_reset_odometry();
+			m_bReset_odometry = true;
 			Reset = 0;
 		}
 	}
@@ -647,26 +661,40 @@ int main(int argc, char * argv[])
 
 			}
 			
-			//nav_msgs::Odometry odom;
 			nav_msgs::msg::Odometry odom;
 			odom.header.stamp = node->current_time;
 			odom.header.frame_id = "odom";
 			odom.child_frame_id = "base_footprint";
-			//pose
-			odom.pose.pose.position.x = coordinates[0];
-			odom.pose.pose.position.y = coordinates[1];
-			odom.pose.pose.position.z = 0.0;
-			//odom.pose.pose.orientation = odom_quat;
-			odom.pose.pose.orientation.x = q.x();
-			odom.pose.pose.orientation.y = q.y();
-			odom.pose.pose.orientation.z = q.z();
-			odom.pose.pose.orientation.w = q.w();
+
+			if(m_bReset_odometry)
+			{
+				odom.pose.pose.position.x = 0;
+				odom.pose.pose.position.y = 0;
+				odom.pose.pose.position.z = 0.0;
+				odom.pose.pose.orientation.x = q.x();
+				odom.pose.pose.orientation.y = q.y();
+				odom.pose.pose.orientation.z = q.z();
+				odom.pose.pose.orientation.w = q.w();
+
+				m_bReset_odometry = false;
+			}
+			else
+			{
+				odom.pose.pose.position.x = coordinates[0];
+				odom.pose.pose.position.y = coordinates[1];
+				odom.pose.pose.position.z = 0.0;
+				odom.pose.pose.orientation.x = q.x();
+				odom.pose.pose.orientation.y = q.y();
+				odom.pose.pose.orientation.z = q.z();
+				odom.pose.pose.orientation.w = q.w();
+
+			}
+
 			odom.twist.twist.linear.x = velocity[0];
 			odom.twist.twist.linear.y = velocity[1];
 			odom.twist.twist.linear.z = 0.0;
 			odom.twist.twist.angular.z = velocity[2];
 			node->odom_publisher->publish(odom);
-
 			node->last_time = node->current_time;
 		}
 
