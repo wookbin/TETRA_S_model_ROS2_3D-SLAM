@@ -93,7 +93,7 @@ def launch_setup(context, *args, **kwargs):
         'Icp/MaxCorrespondenceDistance', '0.35',
         'Icp/Strategy', '1',
         'Icp/OutlierRatio', '0.25', #0.05
-        'Icp/CorrespondenceRatio', '0.1',
+        'Icp/CorrespondenceRatio', '0.2', #0.1
         'Vis/MaxFeatures', '0', #0
         'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
         # 비전 완전 OFF(경고 줄이기)
@@ -126,9 +126,9 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 60,         # 동기화 유연성
-            'sync_queue_size': 60,          # 동기화 유연성
-            'queue_size': 60,               # 동기화 유연성
+            'topic_queue_size': 100,         # 동기화 유연성
+            'sync_queue_size': 100,          # 동기화 유연성
+            'queue_size': 100,               # 동기화 유연성
             'wait_for_transform': 0.3, #0.5
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
