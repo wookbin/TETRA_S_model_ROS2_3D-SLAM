@@ -2154,7 +2154,7 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-				return;
+				break;
 			case rclcpp_action::ResultCode::CANCELED:
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
 				_pRobot.m_iMovebase_Result = 1;
@@ -2163,13 +2163,13 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-				return;
+				break;
 			default:
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Unknown result code");
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
-				return;
+				break;
 		}
 	}
 
