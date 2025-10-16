@@ -665,31 +665,13 @@ int main(int argc, char * argv[])
 			odom.header.stamp = node->current_time;
 			odom.header.frame_id = "odom";
 			odom.child_frame_id = "base_footprint";
-
-			if(m_bReset_odometry)
-			{
-				odom.pose.pose.position.x = 0;
-				odom.pose.pose.position.y = 0;
-				odom.pose.pose.position.z = 0.0;
-				odom.pose.pose.orientation.x = q.x();
-				odom.pose.pose.orientation.y = q.y();
-				odom.pose.pose.orientation.z = q.z();
-				odom.pose.pose.orientation.w = q.w();
-
-				m_bReset_odometry = false;
-			}
-			else
-			{
-				odom.pose.pose.position.x = coordinates[0];
-				odom.pose.pose.position.y = coordinates[1];
-				odom.pose.pose.position.z = 0.0;
-				odom.pose.pose.orientation.x = q.x();
-				odom.pose.pose.orientation.y = q.y();
-				odom.pose.pose.orientation.z = q.z();
-				odom.pose.pose.orientation.w = q.w();
-
-			}
-
+			odom.pose.pose.position.x = coordinates[0];
+			odom.pose.pose.position.y = coordinates[1];
+			odom.pose.pose.position.z = 0.0;
+			odom.pose.pose.orientation.x = q.x();
+			odom.pose.pose.orientation.y = q.y();
+			odom.pose.pose.orientation.z = q.z();
+			odom.pose.pose.orientation.w = q.w();
 			odom.twist.twist.linear.x = velocity[0];
 			odom.twist.twist.linear.y = velocity[1];
 			odom.twist.twist.linear.z = 0.0;
