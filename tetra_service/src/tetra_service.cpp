@@ -178,6 +178,8 @@ typedef struct AR_TAG_POSE
     //Calc Odom to apriltag_TF
     double m_target_yaw = 0.0;
     double m_target_theta = 0.0;
+	//add..Depart distance 
+	double m_dDepart_distance = 0.65;
 
 }AR_TAG_POSE;
 AR_TAG_POSE _pAR_tag_pose;
@@ -850,7 +852,7 @@ public:
 	bool Depart_Station2Move()
 	{
 		bool bResult = false;
-		if(_pAR_tag_pose.m_transform_pose_x <= 0.65 && _pAR_tag_pose.m_iApril_tag_id != -1) //650mm depart move
+		if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance && _pAR_tag_pose.m_iApril_tag_id != -1) //650mm depart move
 		{
 			if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
 			{
@@ -1070,6 +1072,7 @@ public:
 			_pFlag_Value.m_bFlag_nomotion = false;
 			//IMU reset//
 			ImuReset_Call();
+			sleep(1);
 
 			//tetra odometry Reset//
 			pose_reset_data.data = 1;
@@ -1547,12 +1550,12 @@ public:
 				// Station Docking Loop//
 				case 1:
 					printf("Docking Loop 1 Start... \n");
-					LedToggleControl_Call(1,3,100,3,100);
+					LedToggleControl_Call(1,3,10,3,10);
     				ToggleOn_Call(63);
 					m_iDocking_CommandMode = 2;
 					break;
 				case 2:
-					printf("Docking Loop 2... \n");
+					//printf("Docking Loop 2... \n");
 					_pRobot.HOME_id = _pRobot.m_iDocking_id;
 					ChargingStation_tracking(true, _pRobot.HOME_id);
 					if(_pRobot.m_bFalg_DockingExit)
@@ -1592,7 +1595,7 @@ public:
 					
 					break;
 				case 8:
-					printf("Docking End Loop 8... \n");
+					//printf("Docking End Loop 8... \n");
 					LedToggleControl_Call(1,3,100,3,100);
     				ToggleOn_Call(9);
 					printf("TETRA POSE Reset! \n");
@@ -1620,7 +1623,7 @@ public:
 					
 					break;
 				case 31:
-					printf("Docking Loop 31 ChargingStation_back_step... \n");
+					//printf("Docking Loop 31 ChargingStation_back_step... \n");
 					ChargingStation_back_step();
 					break;
 				case 32:
@@ -1956,8 +1959,8 @@ public:
 		
 		//Check robot status : noaml or docking?
 		if(_pRobot.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5)) //Nomal
-    		{
-			RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
+    	{
+			//RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
 
 			//Nav Goal call///////////////////////////////////////////////////////
 			Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
@@ -2019,8 +2022,8 @@ public:
 		
 		//Check robot status : noaml or docking?
 		if(_pRobot.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5)) //Nomal
-			{
-			RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
+		{
+			//RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
 		
 			//Nav Goal call///////////////////////////////////////////////////////
 			Set_goal(request->pose_x, request->pose_y, request->pose_z,
@@ -2031,7 +2034,7 @@ public:
 		else
 		{
 			m_iDocking_CommandMode = 10; //Depart Move
-				bResult = true;
+			bResult = true;
 		
 		}
 		
@@ -2092,7 +2095,7 @@ public:
 
 		//MAX_Linear_velocity data save...//
 		_pDynamic_param.MAX_Linear_velocity = request->max_speed;
-		RCLCPP_INFO(get_logger(), "Set_MAX_Linear_velocity = %.3f", _pDynamic_param.MAX_Linear_velocity);
+		//RCLCPP_INFO(get_logger(), "Set_MAX_Linear_velocity = %.3f", _pDynamic_param.MAX_Linear_velocity);
 		
 		/*
 		float32 max_speed
@@ -2113,13 +2116,13 @@ public:
 			if(feedback->distance_remaining > 0.1 && feedback->distance_remaining < 1.0)
 			{
 				_pDynamic_param.m_bFlag_onetime = false;
-				RCLCPP_INFO(get_logger(), "Distance remaininf = %f", feedback->distance_remaining);
+				//RCLCPP_INFO(get_logger(), "Distance remaininf = %f", feedback->distance_remaining);
 
 				// Update the desired_linear_vel parameter -> 0.3m/s
 				auto parameters = std::vector<rclcpp::Parameter>();
 				parameters.emplace_back(rclcpp::Parameter("FollowPath.desired_linear_vel", 0.3));
 				set_speed_parameter_client_->set_parameters(parameters);
-				RCLCPP_INFO(get_logger(), "Set_desired_linear_vel = 0.3 m/s");
+				//RCLCPP_INFO(get_logger(), "Set_desired_linear_vel = 0.3 m/s");
 			}
 		}
 	}
@@ -2222,13 +2225,13 @@ public:
 		// Check if the service is available
 		if (!clear_entire_global_costmap_client->wait_for_service(std::chrono::seconds(1))) 
 		{
-            RCLCPP_ERROR(this->get_logger(), "Clear global_Costmap Service not available.");
+            //RCLCPP_ERROR(this->get_logger(), "Clear global_Costmap Service not available.");
             return false;
         }
 
 	    if (!clear_entire_local_costmap_client->wait_for_service(std::chrono::seconds(1))) 
 		{
-	        RCLCPP_ERROR(this->get_logger(), "Clear local_Costmap Service not available.");
+	        //RCLCPP_ERROR(this->get_logger(), "Clear local_Costmap Service not available.");
 	        return false;
 	    }
 
