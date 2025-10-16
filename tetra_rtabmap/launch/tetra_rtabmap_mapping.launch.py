@@ -86,10 +86,10 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 100,         # 동기화 유연성
-            'sync_queue_size': 100,          # 동기화 유연성
-            'queue_size': 100,               # 동기화 유연성
-            'wait_for_transform': 0.5,
+            'topic_queue_size': 60,         # 동기화 유연성
+            'sync_queue_size': 60,          # 동기화 유연성
+            'queue_size': 60,               # 동기화 유연성
+            'wait_for_transform': 0.3,
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'false',
