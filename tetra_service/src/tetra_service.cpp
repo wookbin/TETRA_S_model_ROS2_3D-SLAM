@@ -1079,10 +1079,10 @@ public:
 			ImuReset_Call();
 			sleep(1);
 
-			//tetra odometry Reset//
-			pose_reset_data.data = 1;
-			pose_reset_publisher->publish(pose_reset_data);
-			sleep(1);
+			////tetra odometry Reset//
+			//pose_reset_data.data = 1;
+			//pose_reset_publisher->publish(pose_reset_data);
+			//sleep(1);
 
 			Reset_EKF_SetPose();
 		}
