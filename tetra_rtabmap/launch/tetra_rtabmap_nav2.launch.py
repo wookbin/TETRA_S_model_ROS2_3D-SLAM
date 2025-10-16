@@ -77,7 +77,7 @@ def launch_setup(context, *args, **kwargs):
     rtabmap_arguments = ['--udb', db_path]
     rtabmap_arguments.extend([
         'Mem/NotLinkedNodesKept', 'false',
-        'Mem/STMSize', '30',
+        'Mem/STMSize', '80',
         'Mem/LaserScanNormalK', '20',
         'Mem/IncrementalMemory', 'false',
         'Mem/InitWMWithAllNodes', 'true',
@@ -90,12 +90,14 @@ def launch_setup(context, *args, **kwargs):
         'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.25',
+        'Icp/MaxCorrespondenceDistance', '0.35',
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.05',
+        'Icp/OutlierRatio', '0.25', #0.05
         'Icp/CorrespondenceRatio', '0.1',
         'Vis/MaxFeatures', '0', #0
         'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
+        # 비전 완전 OFF(경고 줄이기)
+        'Kp/DetectorStrategy', '0',
         # 근접/로컬 루프 매칭(= map→odom 보정 촘촘히)
         'Rtabmap/DetectionRate', '3.0',         # 5.0 → 3.0 (보정 빈도 ↑, 과도한 CPU 방지)
         'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
@@ -124,10 +126,10 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 100,         # 동기화 유연성
-            'sync_queue_size': 100,          # 동기화 유연성
-            'queue_size': 100,               # 동기화 유연성
-            'wait_for_transform': 0.5, #1.0
+            'topic_queue_size': 60,         # 동기화 유연성
+            'sync_queue_size': 60,          # 동기화 유연성
+            'queue_size': 60,               # 동기화 유연성
+            'wait_for_transform': 0.3, #0.5
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'true',
