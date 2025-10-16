@@ -684,22 +684,25 @@ public:
 		int C_closestIndex = -1;
 		double C_minVal = 0.3;
 
-		for (int i = C_minIndex; i < C_maxIndex; i++)
+		if(m_iDocking_CommandMode > 0)
 		{
-			if ((msg->ranges[i] <= C_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+			for (int i = C_minIndex; i < C_maxIndex; i++)
 			{
-				C_minVal = msg->ranges[i];
-				C_closestIndex = i;
+				if ((msg->ranges[i] <= C_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+				{
+					C_minVal = msg->ranges[i];
+					C_closestIndex = i;
+				}
 			}
-		}
-		//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-		if(msg->ranges[C_closestIndex] > 0.1)
-		{
 			//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-			_pFlag_Value.m_bFlag_Obstacle_Center = true;
+			if(msg->ranges[C_closestIndex] > 0.1)
+			{
+				//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
+				_pFlag_Value.m_bFlag_Obstacle_Center = true;
+			}
+			else
+				_pFlag_Value.m_bFlag_Obstacle_Center = false;
 		}
-		else
-			_pFlag_Value.m_bFlag_Obstacle_Center = false;
 
 	}
 
@@ -713,22 +716,24 @@ public:
 		int cygbot_closestIndex = -1;
 		double cygbot_minVal = 0.3;
 
-		for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
+		if(m_iDocking_CommandMode > 0)
 		{
-			if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+			for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
 			{
-				cygbot_minVal = msg->ranges[i];
-				cygbot_closestIndex = i;
+				if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+				{
+					cygbot_minVal = msg->ranges[i];
+					cygbot_closestIndex = i;
+				}
 			}
+			//printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
+			if(cygbot_closestIndex > 0)
+			{
+				_pFlag_Value.m_bFlag_Obstacle_cygbot = true;
+			}
+			else
+				_pFlag_Value.m_bFlag_Obstacle_cygbot = false;
 		}
-		//printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
-		if(cygbot_closestIndex > 0)
-		{
-			_pFlag_Value.m_bFlag_Obstacle_cygbot = true;
-			//printf("Rear Obstacle Check !!!!! \n");
-		}
-		else
-			_pFlag_Value.m_bFlag_Obstacle_cygbot = false;
 
 	}
 
@@ -2130,6 +2135,7 @@ public:
 	//Navigation to Pose Result Callback//
 	void resultCallback(const GoalHandleNavigateToPose::WrappedResult & result)
 	{
+		int ret;
 		switch (result.code) 
 		{
 			case rclcpp_action::ResultCode::SUCCEEDED:
