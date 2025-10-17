@@ -117,7 +117,7 @@ public:
 
 		//subscribe list////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		joy_subscriber = this->create_subscription<sensor_msgs::msg::Joy>("joy", rclcpp::SensorDataQoS(), std::bind(&TETRA::joyCallback, this, _1));
-		cmd_vel_subscriber = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel_nav", rclcpp::SensorDataQoS(), std::bind(&TETRA::velCallback, this, _1));
+		cmd_vel_subscriber = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::SensorDataQoS(), std::bind(&TETRA::velCallback, this, _1));
 		cmd_vel_manual_subscriber = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel_manual", rclcpp::SensorDataQoS(), std::bind(&TETRA::Manual_velCallback, this, _1));
 		acc_subscriber = this->create_subscription<std_msgs::msg::Int32>("accel_vel", 10, std::bind(&TETRA::accelCallback, this, _1));
 		pose_reset_subscriber = this->create_subscription<std_msgs::msg::Int32>("pose_reset", 10, std::bind(&TETRA::pose_resetCallback, this, _1));
