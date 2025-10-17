@@ -2182,14 +2182,6 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-
-				// =================================================================================
-				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-				if (ret == 0)
-					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-				else
-					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-				// =================================================================================
 				break;
 			case rclcpp_action::ResultCode::CANCELED:
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
@@ -2205,14 +2197,6 @@ public:
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
-
-				// =================================================================================
-				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-				if (ret == 0)
-					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-				else
-					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-				// =================================================================================
 				break;
 		}
 	}
