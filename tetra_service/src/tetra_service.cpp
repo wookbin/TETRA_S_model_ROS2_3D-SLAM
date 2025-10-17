@@ -678,31 +678,31 @@ public:
 		int size = msg->ranges.size();
 		//printf("sick_lidar_size: %d \n", size);
 
-		//Center Check//
-		int C_minIndex = 268;//270;
-		int C_maxIndex = 536; //540;
-		int C_closestIndex = -1;
-		double C_minVal = 0.3;
+		// //Center Check//
+		// int C_minIndex = 268;//270;
+		// int C_maxIndex = 536; //540;
+		// int C_closestIndex = -1;
+		// double C_minVal = 0.3;
 
-		if(m_iDocking_CommandMode > 0)
-		{
-			for (int i = C_minIndex; i < C_maxIndex; i++)
-			{
-				if ((msg->ranges[i] <= C_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-				{
-					C_minVal = msg->ranges[i];
-					C_closestIndex = i;
-				}
-			}
-			//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-			if(msg->ranges[C_closestIndex] > 0.1)
-			{
-				//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-				_pFlag_Value.m_bFlag_Obstacle_Center = true;
-			}
-			else
-				_pFlag_Value.m_bFlag_Obstacle_Center = false;
-		}
+		// if(m_iDocking_CommandMode > 0)
+		// {
+		// 	for (int i = C_minIndex; i < C_maxIndex; i++)
+		// 	{
+		// 		if ((msg->ranges[i] <= C_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+		// 		{
+		// 			C_minVal = msg->ranges[i];
+		// 			C_closestIndex = i;
+		// 		}
+		// 	}
+		// 	//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
+		// 	if(msg->ranges[C_closestIndex] > 0.1)
+		// 	{
+		// 		//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
+		// 		_pFlag_Value.m_bFlag_Obstacle_Center = true;
+		// 	}
+		// 	else
+		// 		_pFlag_Value.m_bFlag_Obstacle_Center = false;
+		// }
 
 	}
 
@@ -716,24 +716,24 @@ public:
 		int cygbot_closestIndex = -1;
 		double cygbot_minVal = 0.3;
 
-		if(m_iDocking_CommandMode > 0)
-		{
-			for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
-			{
-				if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-				{
-					cygbot_minVal = msg->ranges[i];
-					cygbot_closestIndex = i;
-				}
-			}
-			//printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
-			if(cygbot_closestIndex > 0)
-			{
-				_pFlag_Value.m_bFlag_Obstacle_cygbot = true;
-			}
-			else
-				_pFlag_Value.m_bFlag_Obstacle_cygbot = false;
-		}
+		// if(m_iDocking_CommandMode > 0)
+		// {
+		// 	for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
+		// 	{
+		// 		if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+		// 		{
+		// 			cygbot_minVal = msg->ranges[i];
+		// 			cygbot_closestIndex = i;
+		// 		}
+		// 	}
+		// 	//printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
+		// 	if(cygbot_closestIndex > 0)
+		// 	{
+		// 		_pFlag_Value.m_bFlag_Obstacle_cygbot = true;
+		// 	}
+		// 	else
+		// 		_pFlag_Value.m_bFlag_Obstacle_cygbot = false;
+		// }
 
 	}
 
@@ -859,20 +859,24 @@ public:
 		bool bResult = false;
 		if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance && _pAR_tag_pose.m_iApril_tag_id != -1) //650mm depart move
 		{
-			if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
-			{
-				cmd.linear.x =  0.0; 
-				cmd.angular.z = 0.0;
-				cmd_vel_publisher->publish(cmd);
-				bResult = false;
-			}
-			else
-			{
-				cmd.linear.x =  -0.05; 
-				cmd.angular.z = 0.0;
-				cmd_vel_publisher->publish(cmd);
-				bResult = false;
-			}    
+			// if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+			// {
+			// 	cmd.linear.x =  0.0; 
+			// 	cmd.angular.z = 0.0;
+			// 	cmd_vel_publisher->publish(cmd);
+			// 	bResult = false;
+			// }
+			// else
+			// {
+			// 	cmd.linear.x =  -0.05; 
+			// 	cmd.angular.z = 0.0;
+			// 	cmd_vel_publisher->publish(cmd);
+			// 	bResult = false;
+			// }
+			cmd.linear.x =  -0.05; 
+			cmd.angular.z = 0.0;
+			cmd_vel_publisher->publish(cmd);
+			bResult = false;    
 		}
 		else
 		{
@@ -939,7 +943,7 @@ public:
 		//Reset robot localization reset call/////////////////////////////////////////////
 		auto request = std::make_shared<robot_localization::srv::SetPose::Request>();
 		request->pose.header.stamp = this->now(); //rclcpp::Time();
-  		request->pose.header.frame_id = "map";
+  		request->pose.header.frame_id = "odom";
 		// Fill the request with the desired pose
 		request->pose.pose.pose.position.x = 0.0; // Set desired x position
 		request->pose.pose.pose.position.y = 0.0; // Set desired y position
@@ -1079,10 +1083,10 @@ public:
 			ImuReset_Call();
 			sleep(1);
 
-			////tetra odometry Reset//
-			//pose_reset_data.data = 1;
-			//pose_reset_publisher->publish(pose_reset_data);
-			//sleep(1);
+			//tetra odometry Reset//
+			// pose_reset_data.data = 1;
+			// pose_reset_publisher->publish(pose_reset_data);
+			// sleep(1);
 
 			Reset_EKF_SetPose();
 		}
@@ -1376,22 +1380,27 @@ public:
 		{
 			if(m_iRotation_cnt <= 100)
 			{
-				if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
-				{
-					//Stop
-					cmd.linear.x = 0.0; 
-					cmd.angular.z = 0.0;
-					cmd_vel_publisher->publish(cmd);
-					printf("[Stop]: Obstacle Detections! (Rear: %d ) \n", _pFlag_Value.m_bFlag_Obstacle_cygbot);
-				}
-				else
-				{
-					//rotation move
-					cmd.linear.x = -1.0 * m_fdistance * 0.2;
-					cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
-					cmd_vel_publisher->publish(cmd);
-					m_iRotation_cnt ++;
-				}
+				// if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+				// {
+				// 	//Stop
+				// 	cmd.linear.x = 0.0; 
+				// 	cmd.angular.z = 0.0;
+				// 	cmd_vel_publisher->publish(cmd);
+				// 	printf("[Stop]: Obstacle Detections! (Rear: %d ) \n", _pFlag_Value.m_bFlag_Obstacle_cygbot);
+				// }
+				// else
+				// {
+				// 	//rotation move
+				// 	cmd.linear.x = -1.0 * m_fdistance * 0.2;
+				// 	cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
+				// 	cmd_vel_publisher->publish(cmd);
+				// 	m_iRotation_cnt ++;
+				// }
+				//rotation move
+				cmd.linear.x = -1.0 * m_fdistance * 0.2;
+				cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
+				cmd_vel_publisher->publish(cmd);
+				m_iRotation_cnt ++;
 				
 			}
 			else
@@ -1407,22 +1416,27 @@ public:
 		{
 			if(m_iRotation_cnt <= 100)
 			{
-				if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
-				{
-					//Stop
-					cmd.linear.x = 0.0; 
-					cmd.angular.z = 0.0;
-					cmd_vel_publisher->publish(cmd);
-					printf("[Stop]: Obstacle Detections! (Rear: %d ) \n", _pFlag_Value.m_bFlag_Obstacle_cygbot);
-				}
-				else
-				{
-					//rotation move
-					cmd.linear.x = -1.0 * m_fdistance * 0.2;
-					cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
-					cmd_vel_publisher->publish(cmd);
-					m_iRotation_cnt ++;
-				}
+				// if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+				// {
+				// 	//Stop
+				// 	cmd.linear.x = 0.0; 
+				// 	cmd.angular.z = 0.0;
+				// 	cmd_vel_publisher->publish(cmd);
+				// 	printf("[Stop]: Obstacle Detections! (Rear: %d ) \n", _pFlag_Value.m_bFlag_Obstacle_cygbot);
+				// }
+				// else
+				// {
+				// 	//rotation move
+				// 	cmd.linear.x = -1.0 * m_fdistance * 0.2;
+				// 	cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
+				// 	cmd_vel_publisher->publish(cmd);
+				// 	m_iRotation_cnt ++;
+				// }
+				//rotation move
+				cmd.linear.x = -1.0 * m_fdistance * 0.2;
+				cmd.angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 2.0; //1.8;
+				cmd_vel_publisher->publish(cmd);
+				m_iRotation_cnt ++;
 				
 			}
 			else
@@ -1445,22 +1459,27 @@ public:
 		m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
 		if(m_iBack_cnt < 100) //50
 		{
-			if(_pFlag_Value.m_bFlag_Obstacle_cygbot) 
-			{
-				cmd.angular.z = 0.0;
-				cmd.linear.x = 0.0;
-				cmd_vel_publisher->publish(cmd);
-				printf("[m_iBack_cnt: %d ] Drive in reverse STOP_obstacle check! \n", m_iBack_cnt);
+			// if(_pFlag_Value.m_bFlag_Obstacle_cygbot) 
+			// {
+			// 	cmd.angular.z = 0.0;
+			// 	cmd.linear.x = 0.0;
+			// 	cmd_vel_publisher->publish(cmd);
+			// 	printf("[m_iBack_cnt: %d ] Drive in reverse STOP_obstacle check! \n", m_iBack_cnt);
 					
-			}
-			else
-			{
-				cmd.angular.z = 0.0;
-				cmd.linear.x = -1.0 * (m_fdistance) * 0.2;
-				//printf("[m_iBack_cnt: %d ] Drive in reverse.... \n", m_iBack_cnt);
-				cmd_vel_publisher->publish(cmd);
-				m_iBack_cnt++;
-			}
+			// }
+			// else
+			// {
+			// 	cmd.angular.z = 0.0;
+			// 	cmd.linear.x = -1.0 * (m_fdistance) * 0.2;
+			// 	//printf("[m_iBack_cnt: %d ] Drive in reverse.... \n", m_iBack_cnt);
+			// 	cmd_vel_publisher->publish(cmd);
+			// 	m_iBack_cnt++;
+			// }
+			cmd.angular.z = 0.0;
+			cmd.linear.x = -1.0 * (m_fdistance) * 0.2;
+			//printf("[m_iBack_cnt: %d ] Drive in reverse.... \n", m_iBack_cnt);
+			cmd_vel_publisher->publish(cmd);
+			m_iBack_cnt++;
 		}
 		else
 		{
@@ -2163,6 +2182,14 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
+
+				// =================================================================================
+				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+				if (ret == 0)
+					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+				else
+					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+				// =================================================================================
 				break;
 			case rclcpp_action::ResultCode::CANCELED:
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
@@ -2178,6 +2205,14 @@ public:
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
+
+				// =================================================================================
+				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+				if (ret == 0)
+					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+				else
+					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+				// =================================================================================
 				break;
 		}
 	}
