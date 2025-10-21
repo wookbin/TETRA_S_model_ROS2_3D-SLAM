@@ -64,7 +64,7 @@ controller_server:
       regulated_linear_scaling_min_speed: 0.25
       rotate_to_heading_angular_vel: 0.785398
       rotate_to_heading_min_angle: 0.785398
-      transform_tolerance: 0.2 #0.1
+      transform_tolerance: 0.3 #0.1
       use_collision_detection: true
       use_cost_regulated_linear_velocity_scaling: true  # Use costmap values for speed scaling
       use_interpolation: true #false
@@ -75,6 +75,7 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
+      transform_tolerance: 0.3 #0.5
       update_frequency: 15.0 #10.0
       publish_frequency: 15.0 #10.0
       global_frame: odom
@@ -183,7 +184,7 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
-      transform_tolerance: 0.2 #0.5
+      transform_tolerance: 0.3 #0.5
       update_frequency: 5.0 #10.0
       publish_frequency: 5.0 #10.0
       width: 15
@@ -270,7 +271,7 @@ behavior_server:
     local_frame: odom
     global_frame: map
     robot_base_frame: base_footprint #base_link
-    transform_tolerance: 0.2
+    transform_tolerance: 0.3
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
