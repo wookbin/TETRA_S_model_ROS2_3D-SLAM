@@ -6,6 +6,7 @@ from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 import os
+import time  # ← 추가
 import rclpy
 from rclpy.node import Node as RclpyNode
 from rtabmap_msgs.srv import PublishMap
@@ -35,9 +36,18 @@ def wait_and_publish_then_start_nav(context, *args, **kwargs):
     req.optimized = True
     req.graph_only = False
 
+    #future = client.call_async(req)
+    #rclpy.spin_until_future_complete(node, future)
+    
     future = client.call_async(req)
-    # 완료될 때까지 대기 (초기 퍼블리시가 오래 걸릴 수 있음)
-    rclpy.spin_until_future_complete(node, future)
+    end_by = time.monotonic() + 180.0  # 최대 180초 대기
+    while rclpy.ok() and not future.done():
+        rclpy.spin_once(node, timeout_sec=0.1)
+        if time.monotonic() > end_by:
+            node.get_logger().error('PublishMap call timeout')
+            node.destroy_node()
+            rclpy.shutdown()
+            return []
 
     if future.result() is None:
         node.get_logger().error('PublishMap call failed')
@@ -82,35 +92,41 @@ def launch_setup(context, *args, **kwargs):
         'Mem/IncrementalMemory', 'false',
         'Mem/InitWMWithAllNodes', 'true',
         'Optimizer/Strategy', '1',
-        'Icp/VoxelSize', '0.05',
-        'Icp/PointToPlaneK', '20',
+        #'Optimizer/Robust', 'true',
+        'Icp/VoxelSize', '0.1',
+        'Icp/PointToPlaneK', '25',
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
         'Icp/Iterations', '30',
         'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.35',
+        'Icp/PointToPlaneMinComplexity', '0.01',
+        'Icp/MaxCorrespondenceDistance', '0.28', #0.35
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.25', #0.05
-        'Icp/CorrespondenceRatio', '0.2', #0.1
-        'Vis/MaxFeatures', '0', #0
-        'Vis/MinInliers', '0',  # 경고는 뜨지만 그대로 두셔도 동작은 합니다(필요시 6 이상으로 조정)
+        'Icp/OutlierRatio', '0.12', #'0.05'
+        'Icp/CorrespondenceRatio', '0.12',
+        'Icp/RangeMin', '0.05',
+        'Icp/RangeMax', '25.0',
+        'Vis/MaxFeatures', '0',
+        'Vis/MinInliers', '0',
         # 비전 완전 OFF(경고 줄이기)
         'Kp/DetectorStrategy', '0',
         # 근접/로컬 루프 매칭(= map→odom 보정 촘촘히)
-        'Rtabmap/DetectionRate', '3.0',         # 5.0 → 3.0 (보정 빈도 ↑, 과도한 CPU 방지)
-        'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
-        'RGBD/AngularUpdate', '0.05',       # 2.86° 이상 회전해야 새 키프레임
+        'Rtabmap/DetectionRate', '10.0',         # 5.0 → 3.0 (보정 빈도 ↑, 과도한 CPU 방지)
+        'RGBD/LinearUpdate', '0.08',
+        'RGBD/AngularUpdate', '0.04',
         'RGBD/ProximityBySpace', 'true',
-        'RGBD/ProximityMaxGraphDepth', '0',     # 전체 그래프에서 후보 탐색
-        'RGBD/ProximityPathMaxNeighbors', '1', #1
+        'RGBD/ProximityByTime', 'false', 
+        'RGBD/ProximityAngle', '180',
+        'RGBD/ProximityMaxGraphDepth', '0',     # 0 전체 그래프에서 후보 탐색
+        'RGBD/ProximityPathMaxNeighbors', '1', #'1'
         'RGBD/NeighborLinkRefining', 'true',
         'RGBD/LocalLoopDetectionSpace', 'true',
-        'RGBD/LocalLoopDetectionTime', 'true',
-        'RGBD/LocalLoopDetectionRadius', '5.0', # 경로 반복 반경에 맞춰 4~8m 사이로 조정
+        'RGBD/LocalLoopDetectionTime', 'false', #true
+        'RGBD/LocalLoopDetectionRadius', '6.0',
         'RGBD/StartAtOrigin', 'true', # mapping mode: false || localization mode: true
-        'RGBD/MaxOdomCacheSize', '3',#5
+        'RGBD/MaxOdomCacheSize', '5',
     ])
 
 
@@ -129,7 +145,7 @@ def launch_setup(context, *args, **kwargs):
             'topic_queue_size': 100,         # 동기화 유연성
             'sync_queue_size': 100,          # 동기화 유연성
             'queue_size': 100,               # 동기화 유연성
-            'wait_for_transform': 0.3, #0.5
+            'wait_for_transform': 0.5, #0.3
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'true',
@@ -137,6 +153,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/RayTracing': 'true',
             'Grid/3D': 'false',
             'Grid/RangeMax': '25.0',
+            'Grid/RangeMin': '0.05',
             'Grid/MaxObstacleHeight': '2.0',
             'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
