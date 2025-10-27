@@ -24,39 +24,46 @@ def launch_setup(context, *args, **kwargs):
 
     rtabmap_arguments.extend([
         'Mem/NotLinkedNodesKept', 'false',
-        'Mem/STMSize', '30',
+        'Mem/STMSize', '80',
         'Mem/LaserScanNormalK', '20',
         'Mem/IncrementalMemory', 'true',
         'Mem/InitWMWithAllNodes', 'false',
         'Optimizer/Strategy','1',
-        'Icp/VoxelSize', '0.05',
-        'Icp/PointToPlaneK', '20',
+        'Icp/VoxelSize', '0.1',
+        'Icp/PointToPlaneK', '25',
         'Icp/PointToPlaneRadius', '0',
-        'Icp/PointToPlane', 'false', #true
+        'Icp/PointToPlane', 'true',
         'Icp/Iterations', '30',
-        'Icp/Epsilon', '0.005',
+        'Icp/Epsilon', '0.001',
         'Icp/MaxTranslation', '0.3',
         'Icp/MaxRotation', '0.3',
-        'Icp/MaxCorrespondenceDistance', '0.15',
+        'Icp/MaxCorrespondenceDistance', '0.28',
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.1',
-        'Icp/CorrespondenceRatio', '0.2', #0.1
-        'Vis/MaxFeatures', '0', #0
-        'Vis/MinInliers', '12', #0
-        'Rtabmap/DetectionRate', '1.0', #10.0
+        'Icp/PointToPlaneMinComplexity', '0.01', #add...
+        'Icp/OutlierRatio', '0.12', #0.1
+        'Icp/CorrespondenceRatio', '0.12',
+        'Icp/RangeMin', '0.05',
+        'Icp/RangeMax', '25.0',
+        'Vis/MaxFeatures', '0',
+        'Vis/MinInliers', '0',
+        'Kp/DetectorStrategy', '0',
+        'Rtabmap/DetectionRate', '5.0',
         'RGBD/NeighborLinkRefining', 'true',
         'RGBD/ProximityBySpace', 'true', 
         'RGBD/ProximityByTime', 'false', 
-        'RGBD/ProximityPathMaxNeighbors', '10',
-        'RGBD/LinearUpdate', '0.10',        # 10cm 이상 이동해야 새 키프레임
-        'RGBD/AngularUpdate', '0.05',       # 2.86° 이상 회전해야 새 키프레임
-        'RGBD/CreateIntermediateNodes', 'false',
+        'RGBD/ProximityAngle', '180',
+        'RGBD/ProximityMaxGraphDepth', '0',
+        'RGBD/ProximityPathMaxNeighbors', '5', #'3'
+        'RGBD/LinearUpdate', '0.08',
+        'RGBD/AngularUpdate', '0.04',
+        'RGBD/CreateIntermediateNodes', 'true',
         'RGBD/LocalLoopDetectionSpace', 'true',
         'RGBD/LocalLoopDetectionTime', 'true',
-        'RGBD/LocalLoopDetectionRadius', '3.0',   # 반경 3m에서 loop 후보 찾기
-        'RGBD/StartAtOrigin', 'false', # mapping mode: false || localization mode: true
+        'RGBD/LocalLoopDetectionRadius', '6.0', #5.0
+        'RGBD/StartAtOrigin', 'true', # mapping mode: false || localization mode: true
         'RGBD/OptimizeFromGraphEnd', 'false',
         'RGBD/OptimizeMaxError', '4',
+        'RGBD/MaxOdomCacheSize', '10',
     ])
 
     rtabmap_util = Node(
@@ -64,8 +71,7 @@ def launch_setup(context, *args, **kwargs):
         executable='point_cloud_assembler',
         output='screen',
         parameters=[{
-            #'max_clouds': 10,
-            'assembling_time': 0.1,
+            'assembling_time': 0.08,
             'fixed_frame_id': 'odom', #'base_footprint',
             'use_sim_time': use_sim_time,
         }],
@@ -86,17 +92,17 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
             'approx_sync': True,
-            'topic_queue_size': 60,         # 동기화 유연성
-            'sync_queue_size': 60,          # 동기화 유연성
-            'queue_size': 60,               # 동기화 유연성
-            'wait_for_transform': 0.3,
+            'topic_queue_size': 100,
+            'sync_queue_size': 100,
+            'queue_size': 100,
+            'wait_for_transform': 0.5,
             'use_sim_time': use_sim_time,
             'Mem/BinDataKept': 'false',
             'Mem/ReduceGraph': 'false',
             'Grid/FromScan': 'true',
             'Grid/RayTracing': 'true',
             'Grid/3D': 'true',
-            'Grid/RangeMax': '20.0',
+            'Grid/RangeMax': '25.0',
             'Grid/MaxObstacleHeight': '2.0',
             'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
