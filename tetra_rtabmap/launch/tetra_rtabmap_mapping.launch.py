@@ -42,7 +42,7 @@ def launch_setup(context, *args, **kwargs):
         'Icp/PointToPlaneMinComplexity', '0.01', #add...
         'Icp/OutlierRatio', '0.12', #0.1
         'Icp/CorrespondenceRatio', '0.12',
-        'Icp/RangeMin', '0.05',
+        'Icp/RangeMin', '0.5',
         'Icp/RangeMax', '25.0',
         'Vis/MaxFeatures', '0',
         'Vis/MinInliers', '0',
@@ -86,12 +86,15 @@ def launch_setup(context, *args, **kwargs):
         executable='rtabmap',
         output='screen',
         parameters=[{
+            'publish_tf': True,
+            'map_frame_id': 'map',
+            'odom_frame_id': 'odom',
             'frame_id': 'base_footprint',
             'subscribe_depth': False,
             'subscribe_rgb': False,
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
-            'approx_sync': True,
+            'approx_sync': False,
             'topic_queue_size': 100,
             'sync_queue_size': 100,
             'queue_size': 100,
