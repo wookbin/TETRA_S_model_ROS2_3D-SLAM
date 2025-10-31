@@ -11,7 +11,6 @@ bt_navigator:
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
       bt_xml_filename: "/home/tetra/ros2_ws/src/tetra_navigation2/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
-
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
       bt_xml_filename: "/home/tetra/ros2_ws/src/tetra_navigation2/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"
@@ -75,9 +74,9 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      transform_tolerance: 0.3 #0.5
       update_frequency: 15.0 #10.0
       publish_frequency: 15.0 #10.0
+      transform_tolerance: 0.3 #0.5
       global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
