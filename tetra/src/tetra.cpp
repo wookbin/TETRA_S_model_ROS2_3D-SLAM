@@ -673,7 +673,7 @@ int main(int argc, char * argv[])
 			odom.pose.pose.orientation.z = q.z();
 			odom.pose.pose.orientation.w = q.w();
 			odom.twist.twist.linear.x = velocity[0];
-			odom.twist.twist.linear.y = velocity[1];
+			odom.twist.twist.linear.y = 0.0; //velocity[1];
 			odom.twist.twist.linear.z = 0.0;
 			odom.twist.twist.angular.z = velocity[2];
 			node->odom_publisher->publish(odom);
