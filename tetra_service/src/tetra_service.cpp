@@ -100,6 +100,9 @@ int  m_iBack_cnt = 0;
 int  m_iPose_reset_cnt = 0;
 //ros2 launch mode check//
 int  ex_ilaunchMode = 0;
+//add..retry count//
+int ex_iRetry_count = 0;
+int ex_iRetry_Max_count = 10;
 
 //CALC TF distance data
 double m_dTF_calc_poseX = 0.0;
@@ -2167,6 +2170,8 @@ public:
 				ToggleOn_Call(63); //White led
 				sleep(1);
 
+				ex_iRetry_count = 0; //retry count reset
+				
 				if(_pFlag_Value.m_bflag_ComebackHome)
 				{
 					_pAR_tag_pose.m_iSelect_April_tag_id = m_dHome_ID; //0;
@@ -2182,6 +2187,26 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
+
+				//retry set goal loop//========================================================================================
+				if(ex_iRetry_count < ex_iRetry_Max_count)
+				{
+					RCLCPP_ERROR(get_logger(), "Retry Set_goal !");
+					//Clear Costmap Call
+					Clear_Costmap();
+
+					//Nav Goal call///////////////////////////////////////////////////////
+					Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
+					 _pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+					
+
+					ex_iRetry_count++;
+				}
+				else
+				{
+					ex_iRetry_count = 0; //retry count reset
+				}
+				//=============================================================================================================
 				break;
 			case rclcpp_action::ResultCode::CANCELED:
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
