@@ -80,8 +80,8 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
-      width: 10
-      height: 10
+      width: 8 #10
+      height: 8 #10
       resolution: 0.05
       footprint: "[[0.1675,0.215], [-0.318,0.215], [-0.318,-0.215], [0.1675,-0.215]]"
       plugins: ["obstacle_layer", "stvl_layer", "inflation_layer"]
