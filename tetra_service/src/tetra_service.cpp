@@ -182,7 +182,7 @@ typedef struct AR_TAG_POSE
     double m_target_yaw = 0.0;
     double m_target_theta = 0.0;
 	//add..Depart distance 
-	double m_dDepart_distance = 0.65;
+	double m_dDepart_distance = 0.7;
 
 }AR_TAG_POSE;
 AR_TAG_POSE _pAR_tag_pose;
