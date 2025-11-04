@@ -9,7 +9,7 @@ def generate_launch_description():
             name='apriltag_node',
             output='screen',
             parameters=[
-                {'camera_frame': 'camera'}, #'camera1_depth_optical_frame'
+                {'camera_frame': 'camera1_color_optical_frame'}, #'camera'
                 {'tag_family': 'tag36h11'},
                 {'tag_size': 0.1}  # Adjust to your tag's size in meters
             ],
