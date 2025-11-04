@@ -333,7 +333,7 @@ public:
 
 		//subscribe list////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		apriltag_subscriber = this->create_subscription<apriltag_msgs::msg::AprilTagDetectionArray>(
-		 	"detections", 10, std::bind(&TETRA_SERVICE::ApriltagCallback, this, _1));
+		 	"detections", rclcpp::SensorDataQoS().keep_last(1), std::bind(&TETRA_SERVICE::ApriltagCallback, this, _1));
 
 		sick_scan_subscriber = this->create_subscription<sensor_msgs::msg::LaserScan>(
 		  	"scan", rclcpp::SensorDataQoS(), std::bind(&TETRA_SERVICE::SickCallback, this, _1));
@@ -605,6 +605,7 @@ public:
 
 			}
 			string strTF_frame_name = _pAR_tag_pose.m_strFamily + to_string(_pAR_tag_pose.m_iApril_tag_id);
+
 			//TF
 			rclcpp::Time now = this->get_clock()->now();
             geometry_msgs::msg::TransformStamped transformStamped;
@@ -634,6 +635,16 @@ public:
 			m.getRPY(_pAR_tag_pose.m_dApril_tag_roll, _pAR_tag_pose.m_dApril_tag_pitch, _pAR_tag_pose.m_dApril_tag_yaw);
 			//Transform Axis
 			_pAR_tag_pose.m_dPositioning_Angle = _pAR_tag_pose.m_dApril_tag_pitch;
+			_pAR_tag_pose.m_transform_pose_x = _pAR_tag_pose.m_dApril_tag_pose_z;
+ 		 	_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_dApril_tag_pose_x - 0.0175; //D435f RGB offset
+
+
+			RCLCPP_INFO(this->get_logger(), "[camera] Tag%d: x=%.3f y=%.3f ",
+			           _pAR_tag_pose.m_iApril_tag_id,
+			           _pAR_tag_pose.m_transform_pose_x,
+			           _pAR_tag_pose.m_transform_pose_y);
+
+			/*
 			_pAR_tag_pose.m_transform_old_pose_x = _pAR_tag_pose.m_dApril_tag_pose_z;
 			_pAR_tag_pose.m_transform_old_pose_y = _pAR_tag_pose.m_dApril_tag_pose_x;
 
@@ -661,6 +672,7 @@ public:
 					_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_transform_old_pose_y; 
 				}
 			}
+			*/
 
 		}
 		else //No Maker
@@ -673,6 +685,7 @@ public:
 			_pAR_tag_pose.m_dPositioning_Angle = 0.0;
 
 		}
+		//printf("[_pAR_tag_pose]: x: %.3f y: %.3f t: %.3f \n", _pAR_tag_pose.m_transform_pose_x, _pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_dApril_tag_pitch);
 	}
 
 	//Sick Tim571 Lidar Callback
@@ -860,7 +873,7 @@ public:
 	bool Depart_Station2Move()
 	{
 		bool bResult = false;
-		if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance && _pAR_tag_pose.m_iApril_tag_id != -1) //650mm depart move
+		if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance && _pAR_tag_pose.m_iApril_tag_id != -1) //700mm depart move
 		{
 			// if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
 			// {
@@ -883,6 +896,8 @@ public:
 		}
 		else
 		{
+			printf("[Depart_Station2Move] _pAR_tag_pose.m_transform_pose_x: %.3f \n", _pAR_tag_pose.m_transform_pose_x);
+
 			cmd.linear.x =  0.0; 
 			cmd.angular.z = 0.0;
 			cmd_vel_publisher->publish(cmd);
@@ -956,14 +971,17 @@ public:
 		request->pose.pose.pose.orientation.z = 0.0; // Set desired orientation
 		request->pose.pose.pose.orientation.w = 1.0; // Set desired orientation
 		// Optionally set covariance
+		request->pose.pose.covariance.fill(0.0);
 		request->pose.pose.covariance[0] = 0.25;
 		request->pose.pose.covariance[6 * 1 + 1] = 0.25;
-		request->pose.pose.covariance[6 * 5 + 5] = 0.06853892326654787;
+		request->pose.pose.covariance[6 * 5 + 5] = 0.05 * 0.05; //0.06853892326654787;
 		// Call the service
         auto result_future = set_pose_client_->async_send_request(request);
 
+		RCLCPP_INFO(this->get_logger(), "[PoseReset_1]robot localization reset !");
+
 		//wait TF update...
-		rclcpp::sleep_for(std::chrono::milliseconds(50));
+		rclcpp::sleep_for(std::chrono::milliseconds(100));
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		initPose.header.stamp = this->now(); //rclcpp::Time();
 		initPose.header.frame_id = "map";
@@ -978,9 +996,11 @@ public:
 		initPose.pose.pose.orientation.w = 1.0;
 		initPose.pose.covariance[0] = 0.25;
 		initPose.pose.covariance[6 * 1 + 1] = 0.25;
-		initPose.pose.covariance[6 * 5 + 5] = 0.06853892326654787;
+		initPose.pose.covariance[6 * 5 + 5] = 0.05 * 0.05; //0.06853892326654787;
 
 		initial_pose_publisher->publish(initPose);
+
+		RCLCPP_INFO(this->get_logger(), "[PoseReset_2]initial_pose_publish !");
 	}
 
 	bool Marker_Reset_Robot_Pose()
@@ -1284,7 +1304,7 @@ public:
 			float m_fdistance = 0.0;
 			if(_pAR_tag_pose.m_iApril_tag_id == marker_id)
 			{	
-				m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
+				m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 				//printf("master_distance ->: %.5f \n", m_fdistance);
 				if(m_fdistance > 0.65)
 				{
@@ -1298,7 +1318,7 @@ public:
 						return false;
 					}
 						
-					cmd.angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_old_pose_y, _pAR_tag_pose.m_transform_old_pose_x) / 1.25;
+					cmd.angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_transform_pose_x) / 1.25;
 					if((cmd.angular.z > 1.0) || (cmd.angular.z < -1.0))
 					{
 						//Angular Over speed exit loop......
@@ -1313,6 +1333,7 @@ public:
 				else
 				{
 					cmd.linear.x =  0.0;
+					cmd.angular.z = 0.0;
 					cmd_vel_publisher->publish(cmd);
 					_pAR_tag_pose.m_target_yaw = _pAR_tag_pose.m_dApril_tag_pitch;
 					_pAR_tag_pose.m_target_theta = _pAR_tag_pose.m_dPositioning_Angle;
@@ -1370,7 +1391,7 @@ public:
 	{ 
 		bool bResult = false;
 		float m_fdistance = 0.0;
-		m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
+		m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 		//printf("master_distance ->: %.5f \n", m_fdistance);
 		if(_pAR_tag_pose.m_target_yaw <= 0.0174533 && _pAR_tag_pose.m_target_yaw >= -0.0174533) //+- 1.0deg
 		{
@@ -1408,6 +1429,10 @@ public:
 			}
 			else
 			{
+				cmd.linear.x =  0.0; 
+				cmd.angular.z = 0.0;
+				cmd_vel_publisher->publish(cmd);
+
 				m_iRotation_cnt = 0;
 				m_iDocking_CommandMode = 31;
 				
@@ -1444,6 +1469,10 @@ public:
 			}
 			else
 			{
+				cmd.linear.x =  0.0; 
+				cmd.angular.z = 0.0;
+				cmd_vel_publisher->publish(cmd);
+
 				m_iRotation_cnt = 0;
 				m_iDocking_CommandMode = 31;
 			}
@@ -1459,7 +1488,7 @@ public:
 	{
 		bool bResult = false;
 		float m_fdistance = 0.0;
-		m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
+		m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 		if(m_iBack_cnt < 100) //50
 		{
 			// if(_pFlag_Value.m_bFlag_Obstacle_cygbot) 
@@ -1506,7 +1535,7 @@ public:
 		float m_fdistance = 0.0;
 		if(_pAR_tag_pose.m_iApril_tag_id == marker_id)
 		{
-			m_fdistance = sqrt(_pAR_tag_pose.m_transform_old_pose_x * _pAR_tag_pose.m_transform_old_pose_x + _pAR_tag_pose.m_transform_old_pose_y * _pAR_tag_pose.m_transform_old_pose_y);
+			m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 			//printf("master_distance: %.5f \n", m_fdistance);
 			if(_pRobot.m_iCallback_Charging_status < 2)
 			{
@@ -1520,7 +1549,7 @@ public:
 					return false;
 				}
 				
-				cmd.angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_old_pose_y, _pAR_tag_pose.m_transform_old_pose_x) / 1.25;
+				cmd.angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_transform_pose_x) / 1.25;
 				if((cmd.angular.z > 1.0) || (cmd.angular.z < -1.0))
 				{
 					//Angular Over speed exit loop......
@@ -2171,7 +2200,7 @@ public:
 				sleep(1);
 
 				ex_iRetry_count = 0; //retry count reset
-				
+
 				if(_pFlag_Value.m_bflag_ComebackHome)
 				{
 					_pAR_tag_pose.m_iSelect_April_tag_id = m_dHome_ID; //0;
@@ -2187,7 +2216,7 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-
+				
 				//retry set goal loop//========================================================================================
 				if(ex_iRetry_count < ex_iRetry_Max_count)
 				{
@@ -2205,6 +2234,13 @@ public:
 				else
 				{
 					ex_iRetry_count = 0; //retry count reset
+					// =================================================================================
+					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+					if (ret == 0)
+						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+					else
+						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+					// =================================================================================
 				}
 				//=============================================================================================================
 				break;
@@ -2222,6 +2258,14 @@ public:
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
+
+				// =================================================================================
+				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+				if (ret == 0)
+					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+				else
+					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+				// =================================================================================
 				break;
 		}
 	}
