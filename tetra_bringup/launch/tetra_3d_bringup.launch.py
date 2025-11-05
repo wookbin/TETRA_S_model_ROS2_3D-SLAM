@@ -33,7 +33,6 @@ def generate_launch_description():
             output='screen',
             parameters=[os.path.join(get_package_share_directory("tetra_bringup"), 'params', 'ekf.yaml')],
             arguments=['--ros-args', '--log-level', 'error']
-            #remappings=[('/odometry/filtered', '/odom')],
     )
     
     # tetra_interface Board
@@ -116,6 +115,14 @@ def generate_launch_description():
         output='screen',
     )
     
+ # ★ keep-alive: image_raw를 상시 구독/재발행 (초경량)
+    keepalive_relay = Node(
+        package='topic_tools',
+        executable='relay',
+        name='image_keepalive_relay',
+        output='screen',
+        arguments=['/camera1/color/image_raw', '/camera1/color/image_raw_passthrough']
+    )
     
     # create and return launch description object
     return LaunchDescription(
@@ -130,12 +137,8 @@ def generate_launch_description():
             tetra_service_node,
             rosbridge_server,
             rosapi_node,
+            keepalive_relay,
             
-		# USB Camera
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('usb_cam'), '/launch/camera.launch.py']),
-		),
         
         # apriltag_ros
 		IncludeLaunchDescription(
@@ -148,8 +151,8 @@ def generate_launch_description():
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('sick_scan_xd'), '/launch/sick_tim_5xx.launch.py']),
 		),
-
-		## laser filter (shadow_filter)
+		
+		# laser filter (shadow_filter)
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('laser_filters'), '/examples/shadow_filter_example.launch.py']),
