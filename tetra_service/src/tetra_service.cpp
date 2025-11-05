@@ -981,7 +981,7 @@ public:
 		RCLCPP_INFO(this->get_logger(), "[PoseReset_1]robot localization reset !");
 
 		//wait TF update...
-		rclcpp::sleep_for(std::chrono::milliseconds(100));
+		rclcpp::sleep_for(std::chrono::milliseconds(1000));
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		initPose.header.stamp = this->now(); //rclcpp::Time();
 		initPose.header.frame_id = "map";
@@ -994,6 +994,8 @@ public:
 		initPose.pose.pose.orientation.y = 0.0;
 		initPose.pose.pose.orientation.z = 0.0;
 		initPose.pose.pose.orientation.w = 1.0;
+		
+		initPose.pose.covariance.fill(0.0);
 		initPose.pose.covariance[0] = 0.25;
 		initPose.pose.covariance[6 * 1 + 1] = 0.25;
 		initPose.pose.covariance[6 * 5 + 5] = 0.05 * 0.05; //0.06853892326654787;
