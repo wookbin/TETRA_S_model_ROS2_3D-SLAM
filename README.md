@@ -3,6 +3,8 @@ TETRA_S_Model_ROS2_jazzy_3D SLAM &amp; NAV2
 
 ros2-jazzy version package
 
+sudo apt install ros-jazzy-topic-tools --> 설치 필요!
+
 <br />
 
 사용되는 센서:
