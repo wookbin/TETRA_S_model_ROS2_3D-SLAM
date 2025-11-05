@@ -115,7 +115,7 @@ def generate_launch_description():
         output='screen',
     )
     
- # ★ keep-alive: image_raw를 상시 구독/재발행 (초경량)
+ # ★ keep-alive: image_raw를 상시 구독/재발행 (초경량) --> sudo apt install ros-jazzy-topic-tools 설치 필요
     keepalive_relay = Node(
         package='topic_tools',
         executable='relay',
