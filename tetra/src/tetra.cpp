@@ -87,8 +87,6 @@ bool m_bForwardCheck = false;
 //Joystick Enable & Disable
 bool m_bFlag_joy_enable = false;
 
-//add...odometry reset flag
-bool m_bReset_odometry = false;
 
 std::atomic<bool> stop_requested(false);
 void signal_handler(int signal) 
@@ -213,8 +211,11 @@ public:
 
 		int iData1 = 1000.0 * RPM_to_ms(Left_Wheel_vel);
 		int iData2 = 1000.0 * RPM_to_ms(Right_Wheel_vel);
-		dssp_rs232_drv_module_set_velocity(iData1, iData2);
+		//dssp_rs232_drv_module_set_velocity(iData1, iData2); //ASCII Command
+		dssp_rs232_drv_module_set_velocity2(iData1, iData2, &m_dX_pos, &m_dY_pos, &m_dTheta, &m_bumper_data, &m_emg_state); //binary Command
+		//printf("X: %.3f | Y: %.3f | Z: %.3f \n", m_dX_pos, m_dY_pos, m_dTheta);
 	}
+
 	
 	//Callback function////////////////////////////////////////////////////////////////////////////
 	void velCallback(const geometry_msgs::msg::Twist::SharedPtr vel)
@@ -314,7 +315,6 @@ public:
 		if(Reset == 1)
 		{
 			dssp_rs232_drv_module_reset_odometry();
-			m_bReset_odometry = true;
 			Reset = 0;
 		}
 	}
@@ -561,46 +561,23 @@ int main(int argc, char * argv[])
 		//////////////////////////////////////////////////////////////////////////
 		control_angular = input_angular;
 
+		if(!bPosition_mode_flag) //Velocity mode only
+		{
+			node->SetMoveCommand(control_linear, control_angular);
+		}
+
+		//odometry calback//
+		coordinates[0] = (m_dX_pos /10000.0);
+		coordinates[1] = (m_dY_pos /10000.0);
+		coordinates[2] = m_dTheta * (M_PI/1800.0);
 		//EMG Check Loop
 		std_msgs::msg::Int32 emg_state;
 		emg_state.data = m_emg_state;
 		node->emg_publisher->publish(emg_state);
-
 		//Bumper Check Loop
 		std_msgs::msg::Int32 bumper_data;
 		bumper_data.data = m_bumper_data;
 		node->bumper_publisher->publish(bumper_data);
-		
-		//Error Code Check Loop
-		std_msgs::msg::Int32 left_error_code;
-		std_msgs::msg::Int32 right_error_code;
-		left_error_code.data = m_left_error_code;
-		right_error_code.data = m_right_error_code;
-		node->left_error_code_publisher->publish(left_error_code);
-		node->right_error_code_publisher->publish(right_error_code);
-
-		//odometry calback//
-		dssp_rs232_drv_module_read_odometry(&m_dX_pos, &m_dY_pos, &m_dTheta);
-		coordinates[0] = (m_dX_pos /1000.0);
-		coordinates[1] = (m_dY_pos /1000.0);
-		coordinates[2] = m_dTheta * (M_PI/1800.0);
-
-		if(!bPosition_mode_flag) //Velocity mode only
-		{
-			node->SetMoveCommand(control_linear, control_angular);
-			//printf("[cmd_vel]: control_linear = %.3f, control_angular = %.3f \n", control_linear, control_angular);
-			dssp_rs232_drv_module_read_bumper_emg(&m_bumper_data, &m_emg_state, &m_left_error_code, &m_right_error_code);
-		}
-
-		//Error Code Check -> Reset & servo On Loop
-		if(m_left_error_code != 48 || m_right_error_code != 48)
-		{
-			printf("[Motor Driver Error] Left Error Code: %d \n", m_left_error_code);
-			printf("[Motor Driver Error] Right Error Code: %d \n", m_right_error_code);
-			dssp_rs232_drv_module_set_drive_err_reset();
-			usleep(1000);
-			dssp_rs232_drv_module_set_servo(1); //Servo On
-		}
 
 		if(m_emg_state)
 		{
@@ -622,7 +599,28 @@ int main(int argc, char * argv[])
 			}
 		}
 
-		//node->read();
+		// if(m_bumper_data == 2 || m_bumper_data == 3) 
+		// {
+		// 	if(m_bflag_bumper)
+		// 	{
+		// 		printf("!! SERVO OFF !! \n");
+		// 		dssp_rs232_drv_module_set_servo(0); //Servo Off
+		// 		usleep(1000);
+		// 		dssp_rs232_drv_module_set_drive_err_reset();
+		// 		usleep(1000);
+		// 		m_bflag_bumper = false;
+		// 	}
+		// }
+		// else
+		// {
+		// 	if(!m_bflag_bumper)
+		// 	{
+		// 		printf("!! SERVO ON !! \n");
+		// 		dssp_rs232_drv_module_set_servo(1); //Servo On
+		// 		m_bflag_bumper = true;
+		// 	}
+		// }
+
 		if(first) 
 		{
 			node->current_time = node->now();
@@ -633,7 +631,7 @@ int main(int argc, char * argv[])
 		{
 			node->current_time = node->now();
 
-			dt=(node->current_time - node->last_time).seconds(); //dt=(current_time-last_time).toSec();
+			dt=(node->current_time - node->last_time).seconds();
 			for(int i=0;i<3;i++)
 			{
 				velocity[i]=(coordinates[i]-prev_coordinates[i])/dt;
