@@ -21,4 +21,5 @@ int int2str(unsigned char data[], int num);
 void str2int(unsigned char data[], unsigned int dist[]);
 void display_error_message(unsigned char flag);
 int get_response(int fd, unsigned char data[]);
+int get_response2(int fd, unsigned char data[]);
 void decimal2binary(int decimal, int binary[]);
