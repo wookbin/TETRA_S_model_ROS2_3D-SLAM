@@ -15,4 +15,4 @@ int  dssp_rs232_drv_module_reset_odometry();
 int  dssp_rs232_drv_module_set_velocitymode();
 int  dssp_rs232_drv_module_set_positionmode();
 int  dssp_rs232_drv_module_set_charge(int mode);
-int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, int *Xpos_mm, int *Ypos_mm, int *deg, int *bumper, int *emg);
+int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, double *Xpos_mm, double *Ypos_mm, double *deg, int *bumper, int *emg);
