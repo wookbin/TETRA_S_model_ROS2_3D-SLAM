@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "drive_module.h"
 #include "rs232_common.h"
 
@@ -504,43 +505,28 @@ int drvm_set_Charge_Off(int fd)
 	return ret;
 }
 
-int drvm_set_velocity2(int fd, int left, int right, int *x, int *y, int *theta, int *bumper, int *emg)
+int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double *theta, int *bumper, int *emg)
 {
 	int ret;
 	int index;
 	int lrc_val;
 	unsigned char packet_buf[255] = {STX, 'B','V'};
-	if(left < 0)
-	{
-		//printf("[%04x] %02x %02x \n",left* -1, ((left*-1) >> 8) | 0x80, ((left*-1) & 0xff));
-		Left_data[0] = ((left*-1) >> 8) | 0x80;
-		Left_data[1] = ((left*-1) & 0xff);
-		//printf("[L]:%02x %02x \n", Left_data[0], Left_data[1]);
-	}
-	else
-	{
-		//printf("[%04x] %02x %02x \n",left, (left >> 8), (left) & 0xff);
-		Left_data[0] = left >> 8;
-		Left_data[1] = left & 0xff;
-		//printf("[L]:%02x %02x \n", Left_data[0], Left_data[1]);
-	}
 
-	if(right < 0)
-	{
-		//printf("[%04x] %02x %02x \n",right* -1, ((right*-1) >> 8) | 0x80, ((right*-1) & 0xff));
-		Right_data[0] = ((right*-1) >> 8) | 0x80;
-		Right_data[1] = ((right*-1) & 0xff);
-		//printf("[R]:%02x %02x \n", Right_data[0], Right_data[1]);
-	}
-	else
-	{
-		//printf("[%04x] %02x %02x \n",right, (right >> 8), (right) & 0xff);
-		Right_data[0] = right >> 8;
-		Right_data[1] = right & 0xff;
-		//printf("[R]:%02x %02x \n", Right_data[0], Right_data[1]);
-	}
+	//Left//
+	int mag = (left < 0) ? -left : left;
+	if (mag > 0x7FFF) mag = 0x7FFF;
+	uint8_t sign = (left < 0) ? 0x80 : 0x00;
+	Left_data[0] = sign | ((mag >> 8) & 0x7F);
+	Left_data[1] = mag & 0xFF;
 
-	if(!fd) return -1;
+	//Right//
+	int mag2 = (right < 0) ? -right : right;
+	if (mag2 > 0x7FFF) mag2 = 0x7FFF;
+	uint8_t sign2 = (right < 0) ? 0x80 : 0x00;
+	Right_data[0] = sign2 | ((mag2 >> 8) & 0x7F);
+	Right_data[1] = mag2 & 0xFF;
+
+	if(fd < 0) return -1;
 
 	packet_buf[3] = Left_data[0];
 	packet_buf[4] = Left_data[1];
@@ -548,63 +534,57 @@ int drvm_set_velocity2(int fd, int left, int right, int *x, int *y, int *theta, 
 	packet_buf[6] = Right_data[1];
 	packet_buf[7] = ETX;
 	packet_buf[8] = make_lrc(&packet_buf[1], 7);
+
 	ret = write(fd, packet_buf, 9);
-
 	if(ret <= 0) return -2;
-
 	memset(packet_buf, 0, sizeof(unsigned char)*255);
-
 	ret = get_response2(fd, packet_buf);
 	
-	if(packet_buf[1] == 0x30 || packet_buf[1] == 0x32)
+	if(packet_buf[0] == 0x02 &&(packet_buf[1] == 0x30 || packet_buf[1] == 0x32) && packet_buf[14] == 0x03)
 	{
-		// for(int j=0; j<16; j++)
-		// {
-		// 	printf("%02x ", packet_buf[j]);
-		// }
-		// printf("\n");
-
 		m_check_X = (packet_buf[2] >> 7);
 		buf_x = (packet_buf[5] & 0xff) | ((packet_buf[4] << 8) & 0xff00) | ((packet_buf[3] << 16) & 0xff0000) | ((packet_buf[2] << 24) & 0x7f000000);
 		if(m_check_X == 0)
 		{
-			*x = 1 * buf_x;
+			*x = 1.0 * (double)buf_x;
 		}
 		else
 		{
-			*x = -1 * buf_x;
+			*x = -1.0 * (double)buf_x;
 		}
 
 		m_check_Y = (packet_buf[6] >> 7);
 		buf_y = (packet_buf[9] & 0xff) | ((packet_buf[8] << 8) & 0xff00) | ((packet_buf[7] << 16) & 0xff0000) | ((packet_buf[6] << 24) & 0x7f000000);
 		if(m_check_Y == 0)
 		{
-			*y = 1 * buf_y;
+			*y = 1.0 * (double)buf_y;
 		}
 		else
 		{
-			*y = -1 * buf_y;
+			*y = -1.0 * (double)buf_y;
 		}
 
-		*theta = (packet_buf[11] & 0xff) | ((packet_buf[10] << 8) & 0xff00);
-		*bumper = (packet_buf[12] & 0xff);
-		// *emg = (packet_buf[13] & 0xff);
-		//printf("emg: %02x \n", packet_buf[13] & 0xff);
-		if(packet_buf[1] != 0x30)
-		{
-			*emg = 1;
-		}
-		else
-		{
-			*emg = 0;
-		}
+		uint16_t raw_theta = (packet_buf[11] & 0xff) | ((packet_buf[10] << 8) & 0xff00);
+		*theta = (double)raw_theta;
+
+		*bumper = packet_buf[12] & 0xff;
+		*emg = packet_buf[13] & 0xff; 
+
+		// printf("[OK] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
+		// 	packet_buf[0] ,packet_buf[1], packet_buf[2], packet_buf[3], packet_buf[4], packet_buf[5], packet_buf[6], packet_buf[7], packet_buf[8],
+		// 	packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15]);
+
 	}
 	else
 	{
-		//printf("Packet Error !!!!!!! \n");
+		printf("Packet Error !!!!!!!, packet_buf[1] = 0x%02X \n", packet_buf[1]);
+		printf("[NG] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
+			packet_buf[0] ,packet_buf[1], packet_buf[2], packet_buf[3], packet_buf[4], packet_buf[5], packet_buf[6], packet_buf[7], packet_buf[8],
+			packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15]);
 		return -2;
 	}
 	
 
 	return ret;
 }
+
