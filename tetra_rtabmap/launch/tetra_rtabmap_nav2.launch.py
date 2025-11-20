@@ -88,17 +88,17 @@ def launch_setup(context, *args, **kwargs):
         'Mem/InitWMWithAllNodes', 'true',
         'Optimizer/Strategy', '1',
         'Icp/VoxelSize', '0.1',
-        'Icp/PointToPlaneK', '25',
+        'Icp/PointToPlaneK', '15', #25
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '30',
+        'Icp/Iterations', '20', #30
         'Icp/Epsilon', '0.001',
-        'Icp/MaxTranslation', '0.3',
-        'Icp/MaxRotation', '0.3',
+        'Icp/MaxTranslation', '0.25', #0.3
+        'Icp/MaxRotation', '0.25', #0.3
         'Icp/PointToPlaneMinComplexity', '0.01',
-        'Icp/MaxCorrespondenceDistance', '0.28', #0.35
+        'Icp/MaxCorrespondenceDistance', '0.3',  # 0.28
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.12', #'0.05'
+        'Icp/OutlierRatio', '0.12',  # '0.05'
         'Icp/CorrespondenceRatio', '0.12',
         'Icp/RangeMin', '0.1',
         'Icp/RangeMax', '25.0',
@@ -106,36 +106,23 @@ def launch_setup(context, *args, **kwargs):
         'Vis/MinInliers', '0',
         'Kp/DetectorStrategy', '0',
         'Rtabmap/DetectionRate', '10.0',
-        'RGBD/LinearUpdate', '0.08',
-        'RGBD/AngularUpdate', '0.04',
+        'RGBD/LinearUpdate', '0.1', #0.08
+        'RGBD/AngularUpdate', '0.05', #0.04
         'RGBD/ProximityBySpace', 'true',
-        'RGBD/ProximityByTime', 'false', 
+        'RGBD/ProximityByTime', 'false',
         'RGBD/ProximityAngle', '180',
         'RGBD/ProximityMaxGraphDepth', '0',
         'RGBD/ProximityPathMaxNeighbors', '1',
         'RGBD/NeighborLinkRefining', 'true',
         'RGBD/LocalLoopDetectionSpace', 'true',
-        'RGBD/LocalLoopDetectionTime', 'false', #true
+        'RGBD/LocalLoopDetectionTime', 'false',
         'RGBD/LocalLoopDetectionRadius', '6.0',
         'RGBD/StartAtOrigin', 'true',
         'RGBD/MaxOdomCacheSize', '5',
     ])
 
+    # point_cloud_assembler 노드는 제거
 
-    rtabmap_util = Node(
-        package='rtabmap_util',
-        executable='point_cloud_assembler',
-        output='screen',
-        parameters=[{
-            'assembling_time': 0.05,
-            'fixed_frame_id': 'base_footprint',
-            'use_sim_time': use_sim_time,
-        }],
-        remappings=[
-        ('cloud', lidar_topic),
-        ]
-    )
-    
     rtabmap_slam = Node(
         package='rtabmap_slam',
         executable='rtabmap',
@@ -149,7 +136,7 @@ def launch_setup(context, *args, **kwargs):
             'subscribe_rgb': False,
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
-            'approx_sync': False, #True
+            'approx_sync': False,  # True
             'topic_queue_size': 100,
             'sync_queue_size': 100,
             'queue_size': 100,
@@ -171,7 +158,8 @@ def launch_setup(context, *args, **kwargs):
         }],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
-            ('scan_cloud', 'assembled_cloud'),
+            # 여기서 assembled_cloud 대신 lidar_topic으로 직접 매핑
+            ('scan_cloud', lidar_topic),
             ('odom', '/odometry/filtered'),
         ],
     )
@@ -196,7 +184,7 @@ def launch_setup(context, *args, **kwargs):
         actions=[OpaqueFunction(function=wait_and_publish_then_start_nav)]
     )
 
-    return [rtabmap_util, rtabmap_slam, rviz_node, publish_then_nav]
+    return [rtabmap_slam, rviz_node, publish_then_nav]
 
 
 def generate_launch_description():
