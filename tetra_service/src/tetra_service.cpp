@@ -593,99 +593,71 @@ public:
 	//Apriltag Callback Function
 	void ApriltagCallback(const apriltag_msgs::msg::AprilTagDetectionArray::SharedPtr msg) 
 	{
-		int size = msg->detections.size();
-		//printf("size = %d \n", size);
-		if(size != 0) //detection maker
+		if (msg->detections.empty())
 		{
-			for (const auto &detection : msg->detections) 
-			{
-				// Marker ID
-				_pAR_tag_pose.m_iApril_tag_id = detection.id;
-				//RCLCPP_INFO(this->get_logger(), "Marker ID: %d", marker_id);
+			_pAR_tag_pose.m_iApril_tag_id        = -1;
+			_pAR_tag_pose.m_dApril_tag_pose_x    = 0.0;
+			_pAR_tag_pose.m_dApril_tag_pose_y    = 0.0;
+			_pAR_tag_pose.m_dApril_tag_pose_z    = 0.0;
+			_pAR_tag_pose.m_dApril_tag_orientation_x = 0.0;
+			_pAR_tag_pose.m_dApril_tag_orientation_y = 0.0;
+			_pAR_tag_pose.m_dApril_tag_orientation_z = 0.0;
+			_pAR_tag_pose.m_dApril_tag_orientation_w = 1.0;
+			_pAR_tag_pose.m_dApril_tag_roll      = 0.0;
+			_pAR_tag_pose.m_dApril_tag_pitch     = 0.0;
+			_pAR_tag_pose.m_dApril_tag_yaw       = 0.0;
+			return;
+		}
 
-			}
-			string strTF_frame_name = _pAR_tag_pose.m_strFamily + to_string(_pAR_tag_pose.m_iApril_tag_id);
+		const auto &detection = msg->detections.back();
+		_pAR_tag_pose.m_iApril_tag_id = detection.id;
 
-			//TF
-			rclcpp::Time now = this->get_clock()->now();
-            geometry_msgs::msg::TransformStamped transformStamped;
+		// TF name: "tag36h11:0"
+		const std::string strTF_frame_name =_pAR_tag_pose.m_strFamily + std::to_string(_pAR_tag_pose.m_iApril_tag_id);
+
+		// TF Check
+		if (!tf2_buffer_->canTransform("camera", strTF_frame_name, tf2::TimePointZero))
+		{
+			RCLCPP_WARN_THROTTLE(
+				this->get_logger(), *this->get_clock(), 1000,
+				"TF %s -> camera not available yet", strTF_frame_name.c_str());
+			return;
+		}
+
+		geometry_msgs::msg::TransformStamped transformStamped;
+		try
+		{
 			transformStamped = tf2_buffer_->lookupTransform("camera", strTF_frame_name, tf2::TimePointZero);
-
-			//position
-			_pAR_tag_pose.m_dApril_tag_pose_x = transformStamped.transform.translation.x;
-			_pAR_tag_pose.m_dApril_tag_pose_y = transformStamped.transform.translation.y;
-			_pAR_tag_pose.m_dApril_tag_pose_z = transformStamped.transform.translation.z;
-			//rotation//
-			_pAR_tag_pose.m_dApril_tag_orientation_x = transformStamped.transform.rotation.x;
-			_pAR_tag_pose.m_dApril_tag_orientation_y = transformStamped.transform.rotation.y;
-			_pAR_tag_pose.m_dApril_tag_orientation_z = transformStamped.transform.rotation.z;
-			_pAR_tag_pose.m_dApril_tag_orientation_w = transformStamped.transform.rotation.w;
-			
-			// Declaration of quaternion
-			tf2::Quaternion q;
-			q.setW(transformStamped.transform.rotation.w);
-			q.setX(transformStamped.transform.rotation.x);
-			q.setY(transformStamped.transform.rotation.y);
-			q.setZ(transformStamped.transform.rotation.z);
-			//<quaternion -> rotation Matrix
-			tf2::Matrix3x3 m(q);
-			// rotation Matrix -> quaternion
-			m.getRotation(q);
-			// rotation Matrix -> rpy
-			m.getRPY(_pAR_tag_pose.m_dApril_tag_roll, _pAR_tag_pose.m_dApril_tag_pitch, _pAR_tag_pose.m_dApril_tag_yaw);
-			//Transform Axis
-			_pAR_tag_pose.m_dPositioning_Angle = _pAR_tag_pose.m_dApril_tag_pitch;
-			_pAR_tag_pose.m_transform_pose_x = _pAR_tag_pose.m_dApril_tag_pose_z;
- 		 	_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_dApril_tag_pose_x - 0.0175; //D435f RGB offset
-
-
-			RCLCPP_INFO(this->get_logger(), "[camera] Tag%d: x=%.3f y=%.3f ",
-			           _pAR_tag_pose.m_iApril_tag_id,
-			           _pAR_tag_pose.m_transform_pose_x,
-			           _pAR_tag_pose.m_transform_pose_y);
-
-			/*
-			_pAR_tag_pose.m_transform_old_pose_x = _pAR_tag_pose.m_dApril_tag_pose_z;
-			_pAR_tag_pose.m_transform_old_pose_y = _pAR_tag_pose.m_dApril_tag_pose_x;
-
-			if(_pAR_tag_pose.m_dPositioning_Angle > 0.0)
-			{
-				_pAR_tag_pose.m_transform_pose_x = _pAR_tag_pose.m_transform_old_pose_x;
-				if(_pAR_tag_pose.m_transform_old_pose_y > 0)
-				{
-					_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_transform_old_pose_y * -1.0; 
-				}
-				else
-				{
-					_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_transform_old_pose_y; 
-				}
-			}
-			else
-			{
-				_pAR_tag_pose.m_transform_pose_x = _pAR_tag_pose.m_transform_old_pose_x;
-				if(_pAR_tag_pose.m_transform_old_pose_y < 0)
-				{
-					_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_transform_old_pose_y * -1.0; 
-				}
-				else
-				{
-					_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_transform_old_pose_y; 
-				}
-			}
-			*/
-
 		}
-		else //No Maker
+		catch (const tf2::TransformException &ex)
 		{
-			_pAR_tag_pose.m_iApril_tag_id = -1;
-			_pAR_tag_pose.m_transform_pose_x = 0.0;
-			_pAR_tag_pose.m_transform_pose_y = 0.0;
-			_pAR_tag_pose.m_dApril_tag_pitch = 0.0;
-			_pAR_tag_pose.m_dApril_tag_yaw = 0.0;
-			_pAR_tag_pose.m_dPositioning_Angle = 0.0;
-
+			RCLCPP_WARN(this->get_logger(),"Failed to lookup transform from %s to camera: %s", strTF_frame_name.c_str(), ex.what());
+			return;
 		}
-		//printf("[_pAR_tag_pose]: x: %.3f y: %.3f t: %.3f \n", _pAR_tag_pose.m_transform_pose_x, _pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_dApril_tag_pitch);
+
+		// position
+		_pAR_tag_pose.m_dApril_tag_pose_x = transformStamped.transform.translation.x;
+		_pAR_tag_pose.m_dApril_tag_pose_y = transformStamped.transform.translation.y;
+		_pAR_tag_pose.m_dApril_tag_pose_z = transformStamped.transform.translation.z;
+
+		// rotation (quaternion)
+		_pAR_tag_pose.m_dApril_tag_orientation_x = transformStamped.transform.rotation.x;
+		_pAR_tag_pose.m_dApril_tag_orientation_y = transformStamped.transform.rotation.y;
+		_pAR_tag_pose.m_dApril_tag_orientation_z = transformStamped.transform.rotation.z;
+		_pAR_tag_pose.m_dApril_tag_orientation_w = transformStamped.transform.rotation.w;
+
+		//RPY
+		tf2::Quaternion q;
+		q.setW(transformStamped.transform.rotation.w);
+		q.setX(transformStamped.transform.rotation.x);
+		q.setY(transformStamped.transform.rotation.y);
+		q.setZ(transformStamped.transform.rotation.z);
+
+		tf2::Matrix3x3 m(q);
+		m.getRPY(_pAR_tag_pose.m_dApril_tag_roll,_pAR_tag_pose.m_dApril_tag_pitch,_pAR_tag_pose.m_dApril_tag_yaw);
+		_pAR_tag_pose.m_dPositioning_Angle = _pAR_tag_pose.m_dApril_tag_pitch;
+		_pAR_tag_pose.m_transform_pose_x = _pAR_tag_pose.m_dApril_tag_pose_z;
+		_pAR_tag_pose.m_transform_pose_y = _pAR_tag_pose.m_dApril_tag_pose_x - 0.0175; // D435F RGB offset
 	}
 
 	//Sick Tim571 Lidar Callback
