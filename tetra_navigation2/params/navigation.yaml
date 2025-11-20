@@ -76,7 +76,7 @@ local_costmap:
     ros__parameters:
       update_frequency: 15.0 #10.0
       publish_frequency: 15.0 #10.0
-      transform_tolerance: 0.2 #0.3
+      transform_tolerance: 0.3 #0.2
       global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
@@ -126,7 +126,7 @@ local_costmap:
         enabled: true
         voxel_decay: 1.0
         decay_model: 0
-        voxel_size: 0.05
+        voxel_size: 0.1 #0.05
         track_unknown_space: true
         unknown_threshold: 15.0
         mark_threshold: 2
@@ -134,7 +134,7 @@ local_costmap:
         combination_method: 1
         origin_z: 0.0
         publish_voxel_map: false
-        transform_tolerance: 0.2 #0.2 #1.0
+        transform_tolerance: 0.3 #1.0
         mapping_mode: false
         map_save_duration: 60.0
         observation_sources: realsense_cloud livox_cloud
@@ -184,8 +184,8 @@ global_costmap:
   global_costmap:
     ros__parameters:
       transform_tolerance: 0.3 #0.5
-      update_frequency: 5.0 #10.0
-      publish_frequency: 5.0 #10.0
+      update_frequency: 2.0 #5.0
+      publish_frequency: 2.0 #5.0
       width: 15
       height: 15
       global_frame: map
@@ -221,7 +221,7 @@ global_costmap:
         enabled: true
         voxel_decay: 1.0
         decay_model: 0
-        voxel_size: 0.05
+        voxel_size: 0.1 #0.05
         track_unknown_space: true
         unknown_threshold: 15.0
         mark_threshold: 2
@@ -229,7 +229,7 @@ global_costmap:
         combination_method: 1
         origin_z: 0.0
         publish_voxel_map: false
-        transform_tolerance: 0.2 #1.0
+        transform_tolerance: 0.3 #1.0
         mapping_mode: false
         map_save_duration: 60.0
         observation_sources: realsense_cloud livox_cloud
@@ -333,20 +333,20 @@ behavior_server:
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
 
-waypoint_follower:
-  ros__parameters:
-    loop_rate: 20
-    stop_on_failure: false
-    action_server_result_timeout: 900.0
-    waypoint_task_executor_plugin: "wait_at_waypoint"
-    wait_at_waypoint:
-      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
-      enabled: True
-      waypoint_pause_duration: 200
+#waypoint_follower:
+#  ros__parameters:
+#    loop_rate: 20
+#    stop_on_failure: false
+#    action_server_result_timeout: 900.0
+#    waypoint_task_executor_plugin: "wait_at_waypoint"
+#    wait_at_waypoint:
+#      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+#      enabled: True
+#      waypoint_pause_duration: 200
 
 velocity_smoother:
   ros__parameters:
-    smoothing_frequency: 20.0
+    smoothing_frequency: 30.0 # 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [2.0, 0.0, 2.0]
