@@ -115,13 +115,27 @@ def generate_launch_description():
         output='screen',
     )
     
- # ★ keep-alive: image_raw를 상시 구독/재발행 (초경량) --> sudo apt install ros-jazzy-topic-tools 설치 필요
+    #keep-alive: image_raw를 상시 구독/재발행 (초경량)
     keepalive_relay = Node(
         package='topic_tools',
         executable='relay',
         name='image_keepalive_relay',
         output='screen',
         arguments=['/camera1/color/image_raw', '/camera1/color/image_raw_passthrough']
+    )
+    
+    ## depthimage to laserscan
+    depth_to_scan_node = Node(
+        package='depthimage_to_laserscan',
+        executable='depthimage_to_laserscan_node',
+        name='realsense_depth_to_scan',
+        remappings=[
+            ('depth', '/camera1/depth/image_rect_raw'),
+            ('depth_camera_info', '/camera1/depth/camera_info'),
+            ('scan', '/camera1/depth/scan')
+        ],
+        parameters=[os.path.join(get_package_share_directory("tetra_bringup"), 'params', 'realsense_depth_to_scan.yaml')],
+        output='screen'
     )
     
     # create and return launch description object
@@ -138,9 +152,10 @@ def generate_launch_description():
             rosbridge_server,
             rosapi_node,
             keepalive_relay,
+            depth_to_scan_node,
             
         
-        # apriltag_ros
+        ## apriltag_ros
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('apriltag_ros'), '/launch/apriltag_detection.launch.py']),
@@ -152,7 +167,7 @@ def generate_launch_description():
 			[get_package_share_directory('sick_scan_xd'), '/launch/sick_tim_5xx.launch.py']),
 		),
 		
-		# laser filter (shadow_filter)
+		## laser filter (shadow_filter)
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('laser_filters'), '/examples/shadow_filter_example.launch.py']),
@@ -164,17 +179,23 @@ def generate_launch_description():
 			[get_package_share_directory('cyglidar_d2_ros2'), '/launch/cyglidar.launch.py']),
 		),
 		
-		# realsense D455
+		## realsense D455
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('realsense2_camera'), '/launch/rs_launch.py']),
 		),
 
-		# Livox MID-360 (3D LiDAR)
+		## Livox MID-360 (3D LiDAR)
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
 			[get_package_share_directory('livox_ros_driver2'), '/launch_ROS2/MID360_launch.py']),
 		),
+		
+		# costmap_to_cloud (new add..)
+        #IncludeLaunchDescription(
+        #    PythonLaunchDescriptionSource(
+        #        [get_package_share_directory('tetra_costmap_to_cloud'), '/launch/costmap_to_cloud.launch.py']),
+        #),
         
         ]
     )
