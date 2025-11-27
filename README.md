@@ -3,7 +3,9 @@ TETRA_S_Model_ROS2_jazzy_3D SLAM &amp; NAV2
 
 ros2-jazzy version package
 
-sudo apt install ros-jazzy-topic-tools --> 설치 필요!
+[중요] realsense의 pointcloud.enable와 enable_color prameter는 다음과 같이 설정.
+* 도킹시에는 pointcloud.enable = false | enable_color = true
+* 주행시에는 pointcloud.enable = true | enable_color = false
 
 <br />
 
