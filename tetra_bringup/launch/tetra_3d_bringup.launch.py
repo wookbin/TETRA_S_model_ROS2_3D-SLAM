@@ -12,9 +12,14 @@ from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 
-# this is the function launch  system will look for
+# this is the function launch system will look for
 def generate_launch_description():
 
+    # --- 1. Launch Arguments ---
+    use_sim_time = DeclareLaunchArgument('use_sim_time', default_value="false")
+
+    # --- 2. Platform & Localization Nodes ---
+    
     # tetra Motor Driver Board
     tetra_node = Node(
         package='tetra', 
@@ -27,12 +32,12 @@ def generate_launch_description():
     
     # EKF Localization
     ekf_localization_node= Node(
-            package='robot_localization',
-            executable='ekf_node',
-            name='ekf_filter_node',
-            output='screen',
-            parameters=[os.path.join(get_package_share_directory("tetra_bringup"), 'params', 'ekf.yaml')],
-            arguments=['--ros-args', '--log-level', 'error']
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[os.path.join(get_package_share_directory("tetra_bringup"), 'params', 'ekf.yaml')],
+        arguments=['--ros-args', '--log-level', 'error']
     )
     
     # tetra_interface Board
@@ -67,7 +72,6 @@ def generate_launch_description():
     )
     
     # tetra_URDF
-    use_sim_time = DeclareLaunchArgument('use_sim_time', default_value="false")
     rsp_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -115,87 +119,81 @@ def generate_launch_description():
         output='screen',
     )
     
-    #keep-alive: image_raw를 상시 구독/재발행 (초경량)
-    keepalive_relay = Node(
-        package='topic_tools',
-        executable='relay',
-        name='image_keepalive_relay',
+    # --- 3. Sensor & Middleware Launch Files ---
+    
+    # realsense D455
+    realsense_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [get_package_share_directory('realsense2_camera'), '/launch/rs_launch.py']
+        )
+    )
+
+    # Livox MID-360 (3D LiDAR)
+    livox_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [get_package_share_directory('livox_ros_driver2'), '/launch_ROS2/MID360_launch.py']
+        )
+    )
+
+    # apriltag_ros
+    apriltag_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [get_package_share_directory('apriltag_ros'), '/launch/apriltag_detection.launch.py']
+        )
+    )
+    
+    # cygbot 2D lidar
+    cyglidar_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [get_package_share_directory('cyglidar_d2_ros2'), '/launch/cyglidar.launch.py']
+        )
+    )
+
+    # RealSense 원본 토픽을 구독하여 Global Costmap용 새 토픽으로 재발행
+    realsense_relay_node = Node(
+        package='topic_tools', 
+        executable='relay', 
+        name='realsense_global_point_relay', 
         output='screen',
-        arguments=['/camera1/color/image_raw', '/camera1/color/image_raw_passthrough']
+        parameters=[
+            {"input_topic": "/camera1/depth/color/points"},
+            {"output_topic": "/realsense/global_points"},
+            {"type": "sensor_msgs/msg/PointCloud2"}
+        ]
     )
-    
-    ## depthimage to laserscan
-    depth_to_scan_node = Node(
-        package='depthimage_to_laserscan',
-        executable='depthimage_to_laserscan_node',
-        name='realsense_depth_to_scan',
-        remappings=[
-            ('depth', '/camera1/depth/image_rect_raw'),
-            ('depth_camera_info', '/camera1/depth/camera_info'),
-            ('scan', '/camera1/depth/scan')
-        ],
-        parameters=[os.path.join(get_package_share_directory("tetra_bringup"), 'params', 'realsense_depth_to_scan.yaml')],
-        output='screen'
-    )
-    
+
     # create and return launch description object
     return LaunchDescription(
         [
-            tetra_node,
-            ekf_localization_node,
-            tetra_interface_node, 
-            iahrs_driver_node,
-            joy_node,
+            # Launch Arguments
             use_sim_time,
-            rsp_node,
+            
+            # Platform Nodes
+            tetra_node,
+            tetra_interface_node, 
             tetra_service_node,
+            
+            # Localization
+            iahrs_driver_node,
+            ekf_localization_node,
+            rsp_node,
+            
+            # User Interface
+            joy_node,
+            
+            # Middleware
             rosbridge_server,
             rosapi_node,
-            keepalive_relay,
-            depth_to_scan_node,
             
-        
-        ## apriltag_ros
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('apriltag_ros'), '/launch/apriltag_detection.launch.py']),
-		),
-			
-		## sick_tim_571
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('sick_scan_xd'), '/launch/sick_tim_5xx.launch.py']),
-		),
-		
-		## laser filter (shadow_filter)
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('laser_filters'), '/examples/shadow_filter_example.launch.py']),
-		),
-		
-		## cygbot 2D lidar
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('cyglidar_d2_ros2'), '/launch/cyglidar.launch.py']),
-		),
-		
-		## realsense D455
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('realsense2_camera'), '/launch/rs_launch.py']),
-		),
+            # Sensor Launch Files (원본 토픽 발행)
+            realsense_launch,
+            livox_launch,
+            cyglidar_launch,
 
-		## Livox MID-360 (3D LiDAR)
-		IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(
-			[get_package_share_directory('livox_ros_driver2'), '/launch_ROS2/MID360_launch.py']),
-		),
-		
-		# costmap_to_cloud (new add..)
-        #IncludeLaunchDescription(
-        #    PythonLaunchDescriptionSource(
-        #        [get_package_share_directory('tetra_costmap_to_cloud'), '/launch/costmap_to_cloud.launch.py']),
-        #),
-        
+            # Tag Detection (RealSense 토픽을 사용하므로 카메라 뒤에 배치)
+            apriltag_launch, 
+            
+            # 릴레이 노드 (재발행)
+            realsense_relay_node, 
         ]
     )
