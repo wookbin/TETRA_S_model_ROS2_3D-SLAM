@@ -197,7 +197,17 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: virtual_obstacle_source
+        observation_sources: scan virtual_obstacle_source
+        scan:
+          topic: /scan_filtered #/scan
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.0
+          obstacle_max_range: 8.0
+          raytrace_max_range: 9.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          inf_is_valid: False
         virtual_obstacle_source:
           topic: /Global_virtual_wall
           data_type: "PointCloud2"
