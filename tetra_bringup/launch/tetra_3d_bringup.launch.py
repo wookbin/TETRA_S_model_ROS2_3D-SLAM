@@ -141,7 +141,19 @@ def generate_launch_description():
             [get_package_share_directory('apriltag_ros'), '/launch/apriltag_detection.launch.py']
         )
     )
-    
+
+    ## sick_tim_571
+	sick_launch = IncludeLaunchDescription(
+		PythonLaunchDescriptionSource(
+			[get_package_share_directory('sick_scan_xd'), '/launch/sick_tim_5xx.launch.py']),
+		),
+		
+	## laser filter (shadow_filter)
+	laserfilter_launch = IncludeLaunchDescription(
+		PythonLaunchDescriptionSource(
+			[get_package_share_directory('laser_filters'), '/examples/shadow_filter_example.launch.py']),
+	),
+
     # cygbot 2D lidar
     cyglidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -188,6 +200,8 @@ def generate_launch_description():
             # Sensor Launch Files (원본 토픽 발행)
             realsense_launch,
             livox_launch,
+            sick_launch,
+            laserfilter_launch,
             cyglidar_launch,
 
             # Tag Detection (RealSense 토픽을 사용하므로 카메라 뒤에 배치)
