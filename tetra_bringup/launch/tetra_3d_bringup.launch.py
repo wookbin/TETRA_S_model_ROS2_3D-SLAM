@@ -133,6 +133,20 @@ def generate_launch_description():
         )
     )
 
+    ## sick_tim_571
+	sick_launch = IncludeLaunchDescription(
+		PythonLaunchDescriptionSource(
+			[get_package_share_directory('sick_scan_xd'), '/launch/sick_tim_5xx.launch.py']
+        )
+	)
+		
+	## laser filter (shadow_filter)
+	laserfilter_launch = IncludeLaunchDescription(
+		PythonLaunchDescriptionSource(
+			[get_package_share_directory('laser_filters'), '/examples/shadow_filter_example.launch.py']
+        )
+	)
+
     # Apriltag Node 
     apriltag_node = Node(
         package='apriltag_ros',
@@ -166,6 +180,8 @@ def generate_launch_description():
             realsense_launch,
             livox_launch,
             cyglidar_launch,
+            sick_launch, 
+            laserfilter_launch,
             
             # Apriltag 
             apriltag_node, 
