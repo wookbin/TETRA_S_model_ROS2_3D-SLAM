@@ -103,6 +103,8 @@ int  ex_ilaunchMode = 0;
 //add..retry count//
 int ex_iRetry_count = 0;
 int ex_iRetry_Max_count = 10;
+int ex_iRetry_depart_count = 0;
+int ex_iRetry_Max_depart_count = 10;
 
 //CALC TF distance data
 double m_dTF_calc_poseX = 0.0;
@@ -182,7 +184,7 @@ typedef struct AR_TAG_POSE
     double m_target_yaw = 0.0;
     double m_target_theta = 0.0;
 	//add..Depart distance 
-	double m_dDepart_distance = 0.7;
+	double m_dDepart_distance = 0.8;
 
 }AR_TAG_POSE;
 AR_TAG_POSE _pAR_tag_pose;
@@ -445,6 +447,8 @@ public:
 		
 		// Set Max Speed parameter client
         set_speed_parameter_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "controller_server");
+		//add_realsense parameter set
+		camera_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "/camera1");
 
 		//Action list///////////////////////////////////////////////////////////////////////////////////////
 		nav_to_pose_action_client = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
@@ -844,9 +848,11 @@ public:
 
 	bool Depart_Station2Move()
 	{
+		int ret;
 		bool bResult = false;
 		if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance && _pAR_tag_pose.m_iApril_tag_id != -1) //700mm depart move
 		{
+			//printf("[Depart_Station2Move_ing] _pAR_tag_pose.m_transform_pose_x: %.3f \n", _pAR_tag_pose.m_transform_pose_x);
 			// if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
 			// {
 			// 	cmd.linear.x =  0.0; 
@@ -868,19 +874,46 @@ public:
 		}
 		else
 		{
-			printf("[Depart_Station2Move] _pAR_tag_pose.m_transform_pose_x: %.3f \n", _pAR_tag_pose.m_transform_pose_x);
+			if( _pAR_tag_pose.m_transform_pose_x == 0.0)
+			{
+				printf("[Depart_Station2Move_error1] _pAR_tag_pose.m_transform_pose_x: %.3f || _pAR_tag_pose.m_iApril_tag_id: %d \n",
+					 _pAR_tag_pose.m_transform_pose_x, _pAR_tag_pose.m_iApril_tag_id);
+					
+				if(ex_iRetry_Max_depart_count >= ex_iRetry_depart_count)
+				{
+					printf("[Depart_Station2Move_error2] _pAR_tag_pose.m_transform_pose_x: %.3f || _pAR_tag_pose.m_iApril_tag_id: %d \n",
+					 _pAR_tag_pose.m_transform_pose_x, _pAR_tag_pose.m_iApril_tag_id);
+					// =================================================================================
+					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+					if (ret == 0)
+						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+					else
+						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+					// =================================================================================
 
-			cmd.linear.x =  0.0; 
-			cmd.angular.z = 0.0;
-			cmd_vel_publisher->publish(cmd);
+				}
 
-			//Nav Goal call///////////////////////////////////////////////////////
-			Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
-					 _pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+				ex_iRetry_depart_count++;
+				bResult = false; 
+			}
+			else
+			{
+				printf("[Depart_Station2Move_end] _pAR_tag_pose.m_transform_pose_x: %.3f \n", _pAR_tag_pose.m_transform_pose_x);
 
-			m_iDocking_CommandMode = 0;
+				cmd.linear.x =  0.0; 
+				cmd.angular.z = 0.0;
+				cmd_vel_publisher->publish(cmd);
 
-			bResult = true;
+				//Nav Goal call///////////////////////////////////////////////////////
+				Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
+						_pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+
+				m_iDocking_CommandMode = 0;
+
+				bResult = true;
+
+			}
+			
 		}
 		
 		return bResult;
@@ -1582,7 +1615,13 @@ public:
 					printf("Docking Loop 1 Start... \n");
 					LedToggleControl_Call(1,3,10,3,10);
     				ToggleOn_Call(63);
+
+					//add..
+					SetCameraParams(false, true);
+					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
 					m_iDocking_CommandMode = 2;
+
 					break;
 				case 2:
 					//printf("Docking Loop 2... \n");
@@ -1633,6 +1672,7 @@ public:
 					Reset_Robot_Pose();
 					LedToggleControl_Call(1, 5,100,5,1);
 					ToggleOn_Call(63);
+					SetCameraParams(false, true);
 					m_iDocking_CommandMode = 0;
 					break;
 				case 9:
@@ -1933,6 +1973,9 @@ public:
     void Set_goal(double position_x, double position_y, double position_z, 
 				   double orientation_x, double orientation_y,double  orientation_z, double orientation_w) 
 	{
+		//add...
+		SetCameraParams(true, false);
+
         //Wait Action server..
 		while (!this->nav_to_pose_action_client->wait_for_action_server()) 
 		{
@@ -1972,6 +2015,8 @@ public:
 		const std::shared_ptr<interfaces::srv::GotoLocation::Response> response)
 	{
 		bool bResult = false;
+
+
 		//Clear Costmap Call
 		Clear_Costmap();
 		//LED Toggle Call
@@ -2135,6 +2180,19 @@ public:
 		bResult = true;
 		response->command_result = bResult;
 		return true;
+	}
+
+	//Set Realsense Param call
+	void SetCameraParams(bool pointcloud_enable, bool enable_color)
+	{
+		using namespace std::chrono_literals;
+
+		std::vector<rclcpp::Parameter> params;
+		params.emplace_back("pointcloud.enable", pointcloud_enable);
+		params.emplace_back("enable_color", enable_color);
+
+		auto future = camera_param_client_->set_parameters(params);
+
 	}
 
 	//Navigation to Pose Feedback Callback//
@@ -2325,6 +2383,8 @@ private:
 	//robot_localization Service Client
 	rclcpp::Client<robot_localization::srv::SetPose>::SharedPtr set_pose_client_;
 	std::shared_ptr<rclcpp::AsyncParametersClient> set_speed_parameter_client_;
+	//add..
+	std::shared_ptr<rclcpp::AsyncParametersClient> camera_param_client_;
 
 	////Service/////////////////////////////////////////////////////////////////////////////////
 	rclcpp::Service<interfaces::srv::DockingControl>::SharedPtr docking_cmd_srv;
