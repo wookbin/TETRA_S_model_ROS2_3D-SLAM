@@ -883,13 +883,6 @@ public:
 				{
 					printf("[Depart_Station2Move_error2] _pAR_tag_pose.m_transform_pose_x: %.3f || _pAR_tag_pose.m_iApril_tag_id: %d \n",
 					 _pAR_tag_pose.m_transform_pose_x, _pAR_tag_pose.m_iApril_tag_id);
-					// =================================================================================
-					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-					if (ret == 0)
-						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-					else
-						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-					// =================================================================================
 
 				}
 
@@ -2266,13 +2259,7 @@ public:
 				else
 				{
 					ex_iRetry_count = 0; //retry count reset
-					// =================================================================================
-					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-					if (ret == 0)
-						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-					else
-						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-					// =================================================================================
+					
 				}
 				//=============================================================================================================
 				break;
@@ -2290,14 +2277,6 @@ public:
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
-
-				// =================================================================================
-				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-				if (ret == 0)
-					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-				else
-					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-				// =================================================================================
 				break;
 		}
 	}
