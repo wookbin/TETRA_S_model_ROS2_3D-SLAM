@@ -24,4 +24,4 @@ int drvm_read_parameter(int fd, int param, int *value);
 int drvm_read_odometry(int fd, double *Xpos_mm, double *Ypos_mm, double *deg);
 int drvm_set_Charge_On(int fd);
 int drvm_set_Charge_Off(int fd);
-int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double *theta, int *bumper, int *emg);
+int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double *theta, double *velocity_l, double *velocity_a, int *bumper, int *emg);
