@@ -169,11 +169,11 @@ int  dssp_rs232_drv_module_set_charge(int mode)
 	return ret;
 }
 
-int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, double *Xpos_mm, double *Ypos_mm, double *deg, int *bumper, int *emg)
+int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, double *Xpos_mm, double *Ypos_mm, double *deg, double *vel_l, double *vel_a, int *bumper, int *emg)
 {
 	int ret;
 
-	ret = drvm_set_velocity2(_drv, velocity_l, velocity_r, Xpos_mm, Ypos_mm, deg, bumper, emg);
+	ret = drvm_set_velocity2(_drv, velocity_l, velocity_r, Xpos_mm, Ypos_mm, deg, vel_l, vel_a, bumper, emg);
 
 	return ret;
 }
