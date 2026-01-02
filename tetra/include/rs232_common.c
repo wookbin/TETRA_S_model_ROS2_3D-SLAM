@@ -156,23 +156,23 @@ int get_response2(int fd, unsigned char data[])
     int ret;
     int read_bytes = 0;
 
-    // STX 찾기
     do {
         ret = read(fd, data, 1);
-        if (ret <= 0) return -1;
-    } while (data[0] != STX);
 
-    // 나머지 15바이트 한 번에 읽기
-    while (read_bytes < 15) {
-        ret = read(fd, &data[1 + read_bytes], 15 - read_bytes);
+        if (ret <= 0) 
+				return -1;
+    } while (data[0] != STX);
+	
+
+    while (read_bytes < 19) {
+        ret = read(fd, &data[1 + read_bytes], 19 - read_bytes);
         if (ret <= 0) return -1;
         read_bytes += ret;
     }
 
-    // 이제 data[0..15] 채워짐
     if (data[1] != FLAG_OK)
         return -1;
-    if (data[15] != make_lrc(&data[1], 14)) // FLAG~ETX 14바이트
+    if (data[19] != make_lrc(&data[1], 18))
         return -1;
 
     return 0;
