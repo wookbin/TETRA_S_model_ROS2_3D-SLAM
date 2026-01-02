@@ -63,6 +63,9 @@ double m_dX_pos = 0.0;
 double m_dY_pos = 0.0;
 double m_dTheta = 0.0;
 int Reset = 0;
+//Velocity
+double m_dVelocity_l = 0.0;
+double m_dVelocity_a = 0.0;
 //bumper & emg
 int m_bumper_data = 0;
 int m_emg_state = 0;
@@ -95,6 +98,13 @@ void signal_handler(int signal)
     printf("Signal received: %d. Preparing to shutdown...\n", signal);
 }
 
+//add..
+inline double normalize_angle(double angle)
+{
+    while (angle > M_PI)  angle -= 2.0 * M_PI;
+    while (angle < -M_PI) angle += 2.0 * M_PI;
+    return angle;
+}
 
 class TETRA: public rclcpp::Node
 {
@@ -212,8 +222,7 @@ public:
 		int iData1 = 1000.0 * RPM_to_ms(Left_Wheel_vel);
 		int iData2 = 1000.0 * RPM_to_ms(Right_Wheel_vel);
 		//dssp_rs232_drv_module_set_velocity(iData1, iData2); //ASCII Command
-		dssp_rs232_drv_module_set_velocity2(iData1, iData2, &m_dX_pos, &m_dY_pos, &m_dTheta, &m_bumper_data, &m_emg_state); //binary Command
-		//printf("X: %.3f | Y: %.3f | Z: %.3f \n", m_dX_pos, m_dY_pos, m_dTheta);
+		dssp_rs232_drv_module_set_velocity2(iData1, iData2, &m_dX_pos, &m_dY_pos, &m_dTheta, &m_dVelocity_l, &m_dVelocity_a, &m_bumper_data, &m_emg_state); //binary Command
 	}
 
 	
@@ -632,11 +641,18 @@ int main(int argc, char * argv[])
 			node->current_time = node->now();
 
 			dt=(node->current_time - node->last_time).seconds();
-			for(int i=0;i<3;i++)
-			{
-				velocity[i]=(coordinates[i]-prev_coordinates[i])/dt;
-				prev_coordinates[i]=coordinates[i];
+			if (dt <= 1e-4) 
+			{ 
+				node->last_time = node->current_time;
+				continue;
 			}
+
+			// for(int i=0;i<3;i++)
+			// {
+			// 	velocity[i]=(coordinates[i]-prev_coordinates[i])/dt;
+			// 	prev_coordinates[i]=coordinates[i];
+			// }
+			//////////////////////////////////////////////////////////////////////////////////////////
 
 			geometry_msgs::msg::Quaternion odom_quat;
 			geometry_msgs::msg::TransformStamped odom_trans;
@@ -670,10 +686,10 @@ int main(int argc, char * argv[])
 			odom.pose.pose.orientation.y = q.y();
 			odom.pose.pose.orientation.z = q.z();
 			odom.pose.pose.orientation.w = q.w();
-			odom.twist.twist.linear.x = velocity[0];
+			odom.twist.twist.linear.x = m_dVelocity_l/1000.0;  //velocity[0];
 			odom.twist.twist.linear.y = 0.0; //velocity[1];
 			odom.twist.twist.linear.z = 0.0;
-			odom.twist.twist.angular.z = velocity[2];
+			odom.twist.twist.angular.z = m_dVelocity_a/1000.0; //velocity[2];
 			node->odom_publisher->publish(odom);
 			node->last_time = node->current_time;
 		}
