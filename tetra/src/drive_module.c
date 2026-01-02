@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +8,9 @@
 
 int m_check_X = 0;
 int m_check_Y = 0;
+int m_check_vl = 0;
+int m_check_va = 0;
+
 unsigned int buf_x =0;
 unsigned int buf_y =0;
 int Left_Vel[8];
@@ -505,7 +507,7 @@ int drvm_set_Charge_Off(int fd)
 	return ret;
 }
 
-int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double *theta, int *bumper, int *emg)
+int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double *theta, double *velocity_l, double *velocity_a, int *bumper, int *emg)
 {
 	int ret;
 	int index;
@@ -536,11 +538,13 @@ int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double
 	packet_buf[8] = make_lrc(&packet_buf[1], 7);
 
 	ret = write(fd, packet_buf, 9);
+	// printf("[write] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
+	// 		packet_buf[0] ,packet_buf[1], packet_buf[2], packet_buf[3], packet_buf[4], packet_buf[5], packet_buf[6], packet_buf[7], packet_buf[8]);
+
 	if(ret <= 0) return -2;
 	memset(packet_buf, 0, sizeof(unsigned char)*255);
 	ret = get_response2(fd, packet_buf);
-	
-	if(packet_buf[0] == 0x02 &&(packet_buf[1] == 0x30 || packet_buf[1] == 0x32) && packet_buf[14] == 0x03)
+	if(packet_buf[0] == 0x02 && (packet_buf[1] == 0x30 || packet_buf[1] == 0x32) && packet_buf[18] == 0x03)
 	{
 		m_check_X = (packet_buf[2] >> 7);
 		buf_x = (packet_buf[5] & 0xff) | ((packet_buf[4] << 8) & 0xff00) | ((packet_buf[3] << 16) & 0xff0000) | ((packet_buf[2] << 24) & 0x7f000000);
@@ -567,24 +571,50 @@ int drvm_set_velocity2(int fd, int left, int right, double *x, double *y, double
 		uint16_t raw_theta = (packet_buf[11] & 0xff) | ((packet_buf[10] << 8) & 0xff00);
 		*theta = (double)raw_theta;
 
-		*bumper = packet_buf[12] & 0xff;
-		*emg = packet_buf[13] & 0xff; 
+		// new Velocity add... 
+		uint16_t raw_velocity_l = (packet_buf[13] & 0xff) | ((packet_buf[12] << 8) & 0x7f00);
+		m_check_vl = (packet_buf[12] >> 7);
+		if(m_check_vl == 0)
+		{
+			*velocity_l = (double)raw_velocity_l;
+		}
+		else
+		{
+			*velocity_l = (double)raw_velocity_l * -1.0;
+		}
+		
 
-		// printf("[OK] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
+		uint16_t raw_velocity_a = (packet_buf[15] & 0xff) | ((packet_buf[14] << 8) & 0x7f00);
+		m_check_va = (packet_buf[14] >> 7);
+		if(m_check_va == 0)
+		{
+			*velocity_a = (double)raw_velocity_a;
+		}
+		else
+		{
+			*velocity_a = (double)raw_velocity_a * -1.0;
+		}
+		
+
+		*bumper = packet_buf[16] & 0xff;
+		*emg = packet_buf[17] & 0xff; 
+
+		// printf("[OK] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
 		// 	packet_buf[0] ,packet_buf[1], packet_buf[2], packet_buf[3], packet_buf[4], packet_buf[5], packet_buf[6], packet_buf[7], packet_buf[8],
-		// 	packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15]);
+		// 	packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15], packet_buf[16], 
+		// 	packet_buf[17], packet_buf[18], packet_buf[19]);
 
 	}
 	else
 	{
 		printf("Packet Error !!!!!!!, packet_buf[1] = 0x%02X \n", packet_buf[1]);
-		printf("[NG] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
+		printf("[NG] %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X | %02X \n", 
 			packet_buf[0] ,packet_buf[1], packet_buf[2], packet_buf[3], packet_buf[4], packet_buf[5], packet_buf[6], packet_buf[7], packet_buf[8],
-			packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15]);
+			packet_buf[9], packet_buf[10], packet_buf[11], packet_buf[12], packet_buf[13], packet_buf[14], packet_buf[15], packet_buf[16], 
+			packet_buf[17], packet_buf[18], packet_buf[19]);
 		return -2;
 	}
 	
 
 	return ret;
 }
-
