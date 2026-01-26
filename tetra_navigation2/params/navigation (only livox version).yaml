@@ -350,19 +350,19 @@ collision_monitor:
       velocity_polygons: ["translation_forward_high", "translation_forward_low", "translation_backward", "stopped"]
       holonomic: false
       translation_forward_high:
-        points: "[[1.15, 0.315], [1.15, -0.315], [-0.32, -0.315], [-0.32, 0.315]]"
+        points: "[[1.15, 0.4], [1.15, -0.4], [-0.32, -0.4], [-0.32, 0.4]]"
         linear_min: 0.7
         linear_max: 1.5
         theta_min: -1.5
         theta_max: 1.5
       translation_forward_low:
-        points: "[[0.5, 0.315], [0.5, -0.315], [-0.32, -0.315], [-0.32, 0.315]]"
+        points: "[[0.5, 0.4], [0.5, -0.4], [-0.32, -0.4], [-0.32, 0.4]]"
         linear_min: 0.2
         linear_max: 0.699
         theta_min: -1.5
         theta_max: 1.5
       translation_backward:
-        points: "[[0.2, 0.315], [0.2, -0.315], [-0.6, -0.315], [-0.6, 0.315]]"
+        points: "[[0.2, 0.35], [0.2, -0.35], [-0.6, -0.35], [-0.6, 0.35]]"
         linear_min: -1.0
         linear_max: -0.05
         theta_min: -1.5
@@ -383,13 +383,13 @@ collision_monitor:
       velocity_polygons: ["translation_forward", "translation_backward"]
       holonomic: false
       translation_forward:
-        points: "[[0.2, 0.215], [0.2, -0.215], [-0.35, -0.215], [-0.35,  0.215]]"
+        points: "[[0.2, 0.315], [0.2, -0.315], [-0.35, -0.315], [-0.35,  0.315]]"
         linear_min: 0.1
         linear_max: 1.0
         theta_min: -1.5
         theta_max: 1.5
       translation_backward:
-        points: "[[0.2, 0.23], [0.2, -0.23], [-0.4, -0.23], [-0.4,  0.23]]"
+        points: "[[0.2, 0.3], [0.2, -0.3], [-0.4, -0.3], [-0.4,  0.3]]"
         linear_min: -1.0
         linear_max: -0.05
         theta_min: -1.5
