@@ -1,147 +1,176 @@
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, IncludeLaunchDescription, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 import os
+import time
 import rclpy
 from rclpy.node import Node as RclpyNode
 from rtabmap_msgs.srv import PublishMap
 
 
-def call_publish_map_service(context):
+def wait_and_publish_then_start_nav(context, *args, **kwargs):
+    use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context).lower()
+
     rclpy.init()
     node = RclpyNode('publish_map_client')
-
     client = node.create_client(PublishMap, '/rtabmap/publish_map')
 
-    if not client.wait_for_service(timeout_sec=10.0):
-        node.get_logger().error('Service /rtabmap/publish_map not available')
+    max_wait_sec = 600  # max 10 minutes
+    waited = 0
+    while not client.wait_for_service(timeout_sec=1.0):
+        node.get_logger().info('Waiting for /rtabmap/publish_map ...')
+        waited += 1
+        if waited >= max_wait_sec:
+            node.get_logger().error('Timeout waiting for /rtabmap/publish_map')
+            node.destroy_node()
+            rclpy.shutdown()
+            return []
+
+    req = PublishMap.Request()
+    req.global_map = True
+    req.optimized = True
+    req.graph_only = False
+
+    future = client.call_async(req)
+    end_by = time.monotonic() + 180.0
+    while rclpy.ok() and not future.done():
+        rclpy.spin_once(node, timeout_sec=0.1)
+        if time.monotonic() > end_by:
+            node.get_logger().error('PublishMap call timeout')
+            node.destroy_node()
+            rclpy.shutdown()
+            return []
+
+    if future.result() is None:
+        node.get_logger().error('PublishMap call failed')
+        node.destroy_node()
         rclpy.shutdown()
         return []
 
-    request = PublishMap.Request()
-    request.global_map = True
-    request.optimized = False
-    request.graph_only = False
-
-    future = client.call_async(request)
-    rclpy.spin_until_future_complete(node, future, timeout_sec=10.0)
-
-    if future.result() is not None:
-        node.get_logger().info('PublishMap service called successfully')
-    else:
-        node.get_logger().error('Failed to call PublishMap service')
-
+    node.get_logger().info('PublishMap OK')
     node.destroy_node()
     rclpy.shutdown()
 
-    return []
+    include_nav = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('tetra_navigation2'),
+                'launch',
+                'tetra_3d_navigation.launch.py'
+            )
+        ),
+        launch_arguments={'use_sim_time': use_sim_time_str}.items()
+    )
+
+    return [include_nav]
 
 
 def launch_setup(context, *args, **kwargs):
     use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context).lower()
     use_sim_time = (use_sim_time_str == 'true')
     lidar_topic = LaunchConfiguration('lidar_topic').perform(context)
-    imu_topic = LaunchConfiguration('imu_topic').perform(context)
-    mapping = LaunchConfiguration('mapping').perform(context).lower()
     db_name = LaunchConfiguration('db_name').perform(context)
     db_path = f'/home/tetra/.ros/{db_name}.db'
 
-    incremental_memory = 'true' if mapping == 'true' else 'false'
-    initwmwithallnodes = 'false' if mapping == 'true' else 'true'
-
-    if mapping == 'true':
-        rviz_config_file = 'rtabmap_mapping.rviz'
-    else:
-        rviz_config_file = 'tetra_3d_navigation2.rviz'
-
-    rviz_config_dir = os.path.join(
-        get_package_share_directory('tetra_rtabmap'),
-        'rviz',
-        rviz_config_file
-    )
+    if not os.path.isfile(db_path):
+        raise RuntimeError(f"Map file not found at {db_path}")
 
     rtabmap_arguments = ['--udb', db_path]
-
-    if mapping == 'false':
-        if not os.path.isfile(db_path):
-            raise RuntimeError(f"Map file not found at {db_path}")
-
     rtabmap_arguments.extend([
         'Mem/NotLinkedNodesKept', 'false',
-        'Mem/STMSize', '30',
+        'Mem/STMSize', '80',
         'Mem/LaserScanNormalK', '20',
-        'Optimizer/Strategy','1', # 1: g2o / 2: GTSAM 
-        'Icp/VoxelSize', '0.5', # 0.2
-        'Icp/PointToPlaneK', '20',
+        'Mem/IncrementalMemory', 'false',
+        'Mem/InitWMWithAllNodes', 'true',
+        'Optimizer/Strategy', '1',
+        'Icp/VoxelSize', '0.1',
+        'Icp/PointToPlaneK', '15', #25
         'Icp/PointToPlaneRadius', '0',
         'Icp/PointToPlane', 'true',
-        'Icp/Iterations', '10',
+        'Icp/Iterations', '20', #30
         'Icp/Epsilon', '0.001',
-        'Icp/MaxTranslation', '0.5', #3.0
-        'Icp/MaxRotation', '0.5', #0.78
-        'Icp/MaxCorrespondenceDistance', '1',
+        'Icp/MaxTranslation', '0.25', #0.3
+        'Icp/MaxRotation', '0.25', #0.3
+        'Icp/PointToPlaneMinComplexity', '0.01',
+        'Icp/MaxCorrespondenceDistance', '0.3',  # 0.28
         'Icp/Strategy', '1',
-        'Icp/OutlierRatio', '0.7',
-        'Icp/CorrespondenceRatio', '0.2',
+        'Icp/OutlierRatio', '0.12',  # '0.05'
+        'Icp/CorrespondenceRatio', '0.12',
+        'Icp/RangeMin', '0.1',
+        'Icp/RangeMax', '25.0',
+        'Vis/MaxFeatures', '0',
+        'Vis/MinInliers', '0',
+        'Kp/DetectorStrategy', '0',
         'Rtabmap/DetectionRate', '10.0',
-        'Vis/MaxFeatures', '0', #add...not used 3D images..
-        'Vis/MinInliers', '0', #add...not used 3D images..
+        'RGBD/LinearUpdate', '0.1', #0.08
+        'RGBD/AngularUpdate', '0.05', #0.04
+        'RGBD/ProximityByTime', 'false',
+        'RGBD/ProximityMaxGraphDepth', '0',
+        'RGBD/ProximityPathMaxNeighbors', '1',
+        'RGBD/LocalLoopDetectionSpace', 'true',
+        'RGBD/ProximityBySpace', 'true',
+        'RGBD/NeighborLinkRefining', 'false', #'true'
+        'RGBD/MaxOdomCacheSize', '3', #'5'
+        'RGBD/LocalLoopDetectionTime', 'false',
+        'RGBD/LocalLoopDetectionRadius', '3.5', #'6.0'
+        'RGBD/ProximityAngle', '90',#'180'
+        'RGBD/StartAtOrigin', 'false', #'true'
     ])
 
-    rtabmap_util = Node(
-        package='rtabmap_util',
-        executable='point_cloud_assembler',
-        output='screen',
-        parameters=[{
-            'max_clouds': 20,
-            'assembling_time': 0.1,
-            'fixed_frame_id': 'map',
-            'use_sim_time': use_sim_time,
-        }]
-    )
+    # point_cloud_assembler 노드는 제거
 
     rtabmap_slam = Node(
         package='rtabmap_slam',
         executable='rtabmap',
         output='screen',
         parameters=[{
+            'publish_tf': True,
+            'map_frame_id': 'map',
+            'odom_frame_id': 'odom',
             'frame_id': 'base_footprint',
             'subscribe_depth': False,
             'subscribe_rgb': False,
             'subscribe_scan': False,
             'subscribe_scan_cloud': True,
-            'approx_sync': True,
-            'wait_for_transform': 0.2,
+            'approx_sync': False,  # True
+            'topic_queue_size': 100,
+            'sync_queue_size': 100,
+            'queue_size': 100,
+            'wait_for_transform': 0.5,
             'use_sim_time': use_sim_time,
-            'Mem/IncrementalMemory': incremental_memory,
-            'Mem/InitWMWithAllNodes': initwmwithallnodes,
-            'Mem/BinDataKept': 'true', # add... default: false
-            'Mem/ReduceGraph': 'true', # add... default: false
+            'Mem/BinDataKept': 'false',
+            'Mem/ReduceGraph': 'true',
             'Grid/FromScan': 'true',
             'Grid/RayTracing': 'true',
-            'Grid/3D': 'true',
-            'Grid/RangeMax': '15.0',
+            'Grid/3D': 'false',
+            'Grid/RangeMax': '25.0',
+            'Grid/RangeMin': '0.1',
             'Grid/MaxObstacleHeight': '2.0',
             'Grid/MaxGroundHeight': '0.5',
             'Grid/NormalsSegmentation': 'false',
             'Grid/CellSize': '0.05',
             'database_path': db_path,
-            'Optimizer/Strategy': '1',
-            
+            'Reg/Force3DoF': 'true',
         }],
-        #arguments=rtabmap_arguments,
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
+            # 여기서 assembled_cloud 대신 lidar_topic으로 직접 매핑
             ('scan_cloud', lidar_topic),
-            ('odom', 'odom'),
+            ('odom', '/odometry/filtered'),
         ],
     )
 
-    rtabmap_rviz2 = Node(
+    rviz_config_file = 'tetra_3d_navigation2.rviz'
+    rviz_config_dir = os.path.join(
+        get_package_share_directory('tetra_rtabmap'),
+        'rviz',
+        rviz_config_file
+    )
+    rviz_node = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',
@@ -150,47 +179,18 @@ def launch_setup(context, *args, **kwargs):
         output='screen'
     )
 
-    actions = [
-        rtabmap_util,
-        rtabmap_slam,
-    ]
+    publish_then_nav = TimerAction(
+        period=2.0,
+        actions=[OpaqueFunction(function=wait_and_publish_then_start_nav)]
+    )
 
-    if mapping == 'false':
-        # Call PublishMap after 2 seconds...
-        publish_map_timer = TimerAction(
-            period= 5.0,
-            actions=[
-                OpaqueFunction(function=call_publish_map_service),
-                rtabmap_rviz2,
-                ]
-        )
-        actions.append(publish_map_timer)
-
-        # tetra_navigation2 launch...
-        nav2_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(
-                    get_package_share_directory('tetra_navigation2'),
-                    'launch',
-                    'tetra_3d_navigation.launch.py'
-                )
-            ),
-            launch_arguments={
-                'use_sim_time': use_sim_time_str
-            }.items()
-        )
-        actions.append(nav2_launch)
-
-    return actions
+    return [rtabmap_slam, rviz_node, publish_then_nav]
 
 
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('lidar_topic', default_value='/livox/lidar'),
-        DeclareLaunchArgument('imu_topic', default_value='/imu/data'),
-        DeclareLaunchArgument('mapping', default_value='true', description='true: mapping, false: localization'),
         DeclareLaunchArgument('db_name', default_value='rtabmap', description='Name of the .db file without extension'),
         OpaqueFunction(function=launch_setup),
     ])
-
