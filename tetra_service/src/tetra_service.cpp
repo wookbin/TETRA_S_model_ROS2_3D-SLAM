@@ -893,15 +893,25 @@ public:
 			{
 				printf("[Depart_Station2Move_end] _pAR_tag_pose.m_transform_pose_x: %.3f \n", _pAR_tag_pose.m_transform_pose_x);
 
-				cmd.linear.x =  0.0; 
-				cmd.angular.z = 0.0;
-				cmd_vel_publisher->publish(cmd);
+				if(_pAR_tag_pose.m_transform_pose_x <= _pAR_tag_pose.m_dDepart_distance)
+				{
+					cmd.linear.x =  -0.025; 
+					cmd.angular.z = 0.0;
+					cmd_vel_publisher->publish(cmd);
+					bResult = false; 
+				}
+				else
+				{
+					cmd.linear.x =  0.0; 
+					cmd.angular.z = 0.0;
+					cmd_vel_publisher->publish(cmd);
 
-				//Nav Goal call///////////////////////////////////////////////////////
-				Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
-						_pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+					//Nav Goal call///////////////////////////////////////////////////////
+					Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
+							_pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
 
-				m_iDocking_CommandMode = 0;
+					m_iDocking_CommandMode = 0;
+				}
 
 				bResult = true;
 
