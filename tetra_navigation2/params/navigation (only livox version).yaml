@@ -54,7 +54,7 @@ controller_server:
       lookahead_time: 1.0 #1.2  # Dynamic lookahead adjustment based on speed
       max_allowed_time_to_collision_up_to_carrot: 1.0
       max_angular_vel: 0.8 #1.0  # Allow sufficient angular velocity for tight turns
-      max_anguler_accel: 1.0
+      max_angular_accel: 1.0
       max_lookahead_dist: 1.5
       min_lookahead_dist: 0.5  # Large enough for the robot to navigate tight turns smoothly
       max_robot_pose_search_dist: 10.0
