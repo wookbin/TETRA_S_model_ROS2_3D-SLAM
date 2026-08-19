@@ -155,6 +155,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/CellSize': '0.05',
             'database_path': db_path,
             'Reg/Force3DoF': 'true',
+            'Reg/Strategy': '1',
         }],
         arguments=rtabmap_arguments + ['--ros-args', '--log-level', 'WARN'],
         remappings=[
