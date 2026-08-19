@@ -112,6 +112,7 @@ def launch_setup(context, *args, **kwargs):
             'Grid/CellSize': '0.05',
             'database_path': db_path,
             'Reg/Force3DoF': 'true', # 2D SLAM
+            'Reg/Strategy': '1',
             
         }],
         remappings=[
